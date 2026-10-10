@@ -59,6 +59,9 @@ h3{font-size:17px;font-weight:600;margin:0 0 6px}
 .seg{display:inline-flex;background:var(--bg);border-radius:10px;padding:3px}
 .seg button{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2)}
 .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(60,40,10,.12)}
+.seg.vx button{padding:4px 11px;font-size:15px}
+.seg.vx button.ok{color:var(--green)}
+.seg.vx button.bad{color:var(--red)}
 .list{display:flex;flex-direction:column}
 .list>div{padding:12px 0;border-bottom:1px solid var(--line)}
 .list>div:last-child{border-bottom:0}
@@ -555,13 +558,13 @@ function Words(){
   const learned = learnedSet(); const lv = Words.lv || S.cefr || 'A1'; const qq = (Words.q||'').toLowerCase();
   let list = WORDS.filter(w => qq ? (w.w.includes(qq) || w.ko.includes(qq)) : w.lv === lv);
   if(list.length > 300) list = list.slice(0,300);
-  app.innerHTML = `<h1>단어장</h1><p class="sub">${WORDS.length}단어 · A1~C1</p>
+  app.innerHTML = `<h1>단어장</h1><p class="sub">${WORDS.length}단어 · A1~C1${USER.role==='student'?' · 알면 ✓ 모르면 ✗':''}</p>
     <input class="field" placeholder="검색 (영어·한글)" value="${esc(Words.q||'')}" oninput="Words.q=this.value;Words()">
     <div class="row" style="margin:10px 0"><div class="seg">${LEVELS.map(l=>`<button class="${l===lv&&!qq?'on':''}" onclick="Words.lv='${l}';Words.q='';Words()">${l}</button>`).join('')}</div>
       <div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Words()">한글</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Words()">+영영</button></div></div>
-    <div class="card tight"><div class="list">${list.map(w=>{ const st = S.diag[w.w]==='O' ? 'g' : learned.has(w.w) ? ((S.wrong[w.w]||0)>0?'r':'b') : (S.lo!=null && w.i<S.lo ? 'g' : ''); return `<div class="row between"><div><b>${esc(w.w)}</b> <span class="tiny">${esc(w.pos)}</span><div class="muted" style="font-size:15px">${esc(w.ko)}</div>${S.settings.showEn?`<div class="small">${esc(w.en)}</div>`:''}</div><div style="text-align:right;flex-shrink:0">${st?`<span class="pill ${st}">${st==='g'?'앎':st==='b'?'학습':'오답'}</span>`:''}<br><button class="btn xs plain" style="margin-top:4px" onclick="Words.toggleKnown('${w.w}')">${S.diag[w.w]==='O'?'모름으로':'앎으로'}</button></div></div>`;}).join('')}</div>${list.length>=300?'<p class="small">300개까지만 표시</p>':''}</div>`;
+    <div class="card tight"><div class="list">${list.map(w=>{ const st = S.diag[w.w]==='O' ? 'g' : learned.has(w.w) ? ((S.wrong[w.w]||0)>0?'r':'b') : (S.lo!=null && w.i<S.lo ? 'g' : ''); return `<div class="row between"><div><b>${esc(w.w)}</b> <span class="tiny">${esc(w.pos)}</span><div class="muted" style="font-size:15px">${esc(w.ko)}</div>${S.settings.showEn?`<div class="small">${esc(w.en)}</div>`:''}</div><div style="text-align:right;flex-shrink:0">${st?`<span class="pill ${st}">${st==='g'?'앎':st==='b'?'학습':'오답'}</span>`:''}${USER.role==='student'?`<br><div class="seg vx" style="margin-top:6px"><button class="${S.diag[w.w]==='O'?'on ok':''}" onclick="Words.mark('${w.w}','O')">✓</button><button class="${S.diag[w.w]==='X'?'on bad':''}" onclick="Words.mark('${w.w}','X')">✗</button></div>`:''}</div></div>`;}).join('')}</div>${list.length>=300?'<p class="small">300개까지만 표시</p>':''}</div>`;
 }
-Words.toggleKnown = w => { S.diag[w] = S.diag[w]==='O' ? 'X' : 'O'; save(); Words(); };
+Words.mark = (w,v) => { S.diag[w] = S.diag[w]===v ? undefined : v; if(S.diag[w]===undefined) delete S.diag[w]; save(); Words(); };
 
 function Settings(){
   app.innerHTML = `<h1>설정</h1><p class="sub">${esc(USER.name)} · ${esc(USER.email)}</p>
