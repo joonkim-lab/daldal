@@ -137,7 +137,6 @@ const CONFIG = {
     'jasoncanada0506@gmail.com': 'Jason',
     'elvinkim827@gmail.com': 'Elvin',
   },
-  discordWebhook: 'https://discord.com/api/webhooks/1558491004686966928/rrXrMJaSFFbijWh9ENQdWy-jWPC4XPu75xf4Lam3YBrmgaI-7zmi3PsJ9ScY56wfzraM',
   wordsUrl: 'words.json',
   newPerDay: 20,
   testPerDay: 30,
@@ -461,7 +460,6 @@ function buildQuestions(words, type, count, seed){
   });
 }
 function normSpell(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
-async function postDiscord(text){ if(!CONFIG.discordWebhook) return; try{ await fetch(CONFIG.discordWebhook, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content:text})}); }catch(e){} }
 
 const Test = {
   qs:[], idx:0, ans:[], meta:null, picked:null, submitted:false,
@@ -497,8 +495,7 @@ const Test = {
     if(Test.meta.kind === 'daily'){ const d = S.days[Test.meta.k]; const first = !d.test; d.test = rec; S.lastStudy = Test.meta.k; S.streak = calcStreak(); if(first && d.kind==='new') autoAdjust(); }
     if(Test.meta.kind === 'assigned'){ await Store.set('tests', Test.meta.id, {results:{[USER.uid]: {...rec, name:USER.name, answers:Test.ans}}}, true); }
     save();
-    await Store.set('events', Store.newId(), {uid:USER.uid, name:USER.name, kind:Test.meta.kind, title:Test.meta.title, score, n, c, at:Date.now()});
-    postDiscord(`📘 **${USER.name}** · ${Test.meta.title} · **${score}점** (${c}/${n})${wrong.length ? `\n틀린 단어: ${wrong.slice(0,10).join(', ')}${wrong.length>10?' …':''}` : ' · 전부 정답 🎉'}`);
+    await Store.set('events', Store.newId(), {uid:USER.uid, name:USER.name, kind:Test.meta.kind, title:Test.meta.title, score, n, c, wrong:wrong.slice(0,10), at:Date.now()});
     app.innerHTML = `
       <h1>${score}점</h1><p class="sub">${esc(Test.meta.title)} · ${c} / ${n}</p>
       <div class="card">${wrong.length ? `<h3>틀린 단어 ${wrong.length}</h3><div class="list">${wrong.map(w=>`<div><b>${esc(w)}</b> <span class="muted">${esc(BYW[w].ko)}</span></div>`).join('')}</div>` : '<p>전부 맞았어요. 🎉</p>'}</div>
@@ -644,7 +641,6 @@ const Admin = {
     const link = location.origin + location.pathname + '#test=' + id;
     Admin.tab='tests'; await Admin.render();
     try{ await navigator.clipboard.writeText(link); toast('만들었습니다 · 링크 복사됨'); }catch(e){ toast('만들었습니다'); }
-    postDiscord(`📝 새 시험 **${title}** (${type==='mcq'?'객관식':type==='spell'?'철자':'섞어서'} ${Math.min(count,words.length)}문제)\n${link}`);
   },
   testsHtml(){
     const names = {}; Admin.kids.forEach(k=>names[k.id]=k.name);

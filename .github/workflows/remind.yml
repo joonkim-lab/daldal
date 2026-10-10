@@ -1,6 +1,7 @@
-name: 달달 저녁 알림
+name: 달달 알림
 on:
   schedule:
+    - cron: '*/30 22,23,0-14 * * *'
     - cron: '30 12 * * *'
   workflow_dispatch:
 jobs:
@@ -15,4 +16,5 @@ jobs:
           BOT_EMAIL: ${{ secrets.BOT_EMAIL }}
           BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          MODE: ${{ (github.event.schedule == '30 12 * * *' || github.event_name == 'workflow_dispatch') && 'daily' || 'results' }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
