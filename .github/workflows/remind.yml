@@ -1,7 +1,7 @@
 name: 달달 저녁 알림
 on:
   schedule:
-    - cron: '30 12 * * *'   # UTC 12:30 = 한국 21:30 매일
+    - cron: '30 12 * * *'
   workflow_dispatch:
 jobs:
   remind:
@@ -10,8 +10,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install firebase-admin
       - run: python scripts/remind.py
         env:
-          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          BOT_EMAIL: ${{ secrets.BOT_EMAIL }}
+          BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}

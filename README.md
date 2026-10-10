@@ -20,10 +20,12 @@
 7. (선택) `CONFIG.discordWebhook`에 결과 채널 웹훅 → 시험 결과가 바로 올라감
 8. 커밋·푸시 → 저장소 Settings → Pages → main 브랜치 루트 배포
 
-## 알림 (GitHub Actions)
-1. Firebase 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성 (JSON 다운로드)
-2. 저장소 Settings → Secrets and variables → Actions → `FIREBASE_SA` (JSON 내용 전체), `DISCORD_WEBHOOK`
-3. Actions 탭에서 "달달 저녁 알림" → Run workflow로 한 번 테스트
+## 알림 (GitHub Actions, 서비스 계정 키 없이)
+조직 정책상 서비스 계정 키를 못 만들어서, 이메일/비밀번호 '봇 계정'으로 읽는다.
+1. Firebase → Authentication → 로그인 방법 → 이메일/비밀번호 사용 설정
+2. Authentication → 사용자 → 사용자 추가 (예: bot@daldal.app / 긴 비밀번호)
+3. 저장소 Settings → Secrets → Actions: `BOT_EMAIL`, `BOT_PASSWORD`, `DISCORD_WEBHOOK`
+4. Actions 탭 → "달달 저녁 알림" → Run workflow (수동 실행은 일요일에도 돈다)
 
 ## 데이터 구조 (Firestore)
 - `users/{uid}` {email, name, role}
@@ -33,7 +35,7 @@
 
 ## 학습 규칙
 - 레벨 테스트 110문항(실재어 80 + 가짜 30) 최대 3회 → 유효 회차의 중앙값으로 출발점 확정 → 경계 근처(회색 구역) 단어 O/X 확인
-- 월~금 하루 30단어: 외우기(카드, 다시/외웠다 반복) → 시험 30문제(객관식 15 + 철자 15)
+- 월~금 하루 20단어(기본, 자동 조절 15~40): 외우기(카드, 다시/외웠다 반복) → 그날 단어로 시험(객관식·철자 반반)
 - 토: 그 주 외운 단어로 복습 시험 30문제 · 일: 쉼
 - 틀린 단어는 '틀린 단어' 목록에 쌓이고 맞히면 빠짐
 - 관리자: 아이별 현황, 시험 만들기(객관식/철자/섞어서, 배운 단어/등급 전체/직접 입력) → 링크 `#test=ID` → 결과 기록
