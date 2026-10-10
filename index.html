@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#f6f1e7">
 <title>달달</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d6b5a'/%3E%3Ctext x='32' y='42' font-size='28' text-anchor='middle' fill='white' font-family='-apple-system,sans-serif' font-weight='700'%3E영%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 :root{
   --bg:#f6f1e7; --card:#fffdf8; --ink:#1f1b16; --ink2:#6f675c; --ink3:#a79d8f;
@@ -117,9 +120,19 @@ kbd{font-family:inherit;background:var(--bg);padding:1px 6px;border-radius:6px;f
    제작 Educclesia Group · 데이터 NGSL/NAWL(CC BY-SA 4.0) + Oxford 3000/5000 CEFR 등급
    ===================================================================== */
 const CONFIG = {
-  firebase: null,            // 콘솔의 firebaseConfig 객체를 여기에 붙여넣으면 클라우드 모드 (없으면 이 기기 로컬 저장)
-  admins: ['joon.kim@educclesia.com'],
+  firebase: {                // 콘솔의 firebaseConfig (null이면 이 기기 로컬 저장)
+    apiKey: "AIzaSyAAfmby4xi5AeCFyOE8UIhDJoNXT6MZmp0",
+    authDomain: "daldal-a4dcc.firebaseapp.com",
+    projectId: "daldal-a4dcc",
+    storageBucket: "daldal-a4dcc.firebasestorage.app",
+    messagingSenderId: "141038792785",
+    appId: "1:141038792785:web:cc68512bc11f9b1d144870"
+  },
+  admins: ['joon.kim@educclesia.com', 'bomicho.coldwater@gmail.com'],
   students: {               // 이메일: 표시 이름
+    'creativemeriel@gmail.com': 'Meriel',
+    'jasoncanada0506@gmail.com': 'Jason',
+    'elvinkim827@gmail.com': 'Elvin',
   },
   discordWebhook: '',        // 시험 결과를 바로 보낼 채널 웹훅 (비우면 사용 안 함)
   wordsUrl: 'words.json',
@@ -697,10 +710,6 @@ function runSelfTest(){
   app.innerHTML = `<h1>셀프테스트 ${fails?'실패':'통과'}</h1><pre style="font-size:13px;white-space:pre-wrap">${out.join('\n')}</pre>`;
   S = null; USER = null;
 }
-</script>
-<script>
-// Firebase SDK는 CONFIG.firebase가 있을 때만 로드
-if(CONFIG.firebase){ ['firebase-app-compat','firebase-auth-compat','firebase-firestore-compat'].forEach(n => { document.write(`<script src="https://www.gstatic.com/firebasejs/10.14.1/${n}.js"><\/script>`); }); }
 </script>
 </body>
 </html>
