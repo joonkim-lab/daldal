@@ -60,7 +60,8 @@ for r in http(f'{BASE}:runQuery', q, tok):
     try: p = doc(http(f'{BASE}/progress/{sid}', token=tok))
     except Exception: p = {}
     day = (p.get('days') or {}).get(key) or {}
-    state = '레벨 전' if p.get('lo') is None else '함' if day.get('test') else '외우기만' if day.get('learned') else '안 함'
+    nvalid = len([x for x in (p.get('placements') or []) if x.get('valid')])
+    state = '레벨 전' if nvalid < 3 else '함' if day.get('test') else '외우기만' if day.get('learned') else '안 함'
     kids.append({'id': sid, 'name': name, 'p': p, 'day': day, 'state': state})
 byid = {k['id']: k for k in kids}
 
@@ -82,6 +83,24 @@ for r in http(f'{BASE}:runQuery', q, tok):
     say('\n'.join(x for x in lines if x))
     last = max(last, int(e.get('at') or 0))
 
+# 1-2. 레벨 테스트 다음 회차 열림 / 3회 완료 알림
+GAP = 3 * 60 * 60 * 1000; nowms = int(time.time() * 1000)
+place_sent = set(me.get('placeNotified') or [])
+LT = M.get('레벨 테스트', {})
+for k in kids:
+    pl = k['p'].get('placements') or []; valid = [x for x in pl if x.get('valid')]; n = len(valid)
+    if not pl: continue
+    if n >= 3:
+        tag = f'{k["id"]}:done'
+        if tag not in place_sent:
+            say(pick(LT.get('완료') or ['{멘션} 레벨 테스트 3번 끝! 출발점은 **{레벨}**.'], k['name'], 레벨=k['p'].get('cefr') or '?')); place_sent.add(tag)
+        continue
+    lastp = pl[-1]
+    if lastp.get('valid') and nowms >= int(lastp.get('at') or 0) + GAP:
+        tag = f'{k["id"]}:{n + 1}'
+        if tag not in place_sent:
+            say(pick(LT.get('열림') or ['{멘션} 레벨 테스트 {회차}회차가 열렸어!'], k['name'], 회차=n + 1)); place_sent.add(tag)
+
 # 2. 독촉 (일요일 제외, 시각이 지났고 1시간 안이며 오늘 아직 안 보낸 것)
 if dow != 0:
     for i, rule in enumerate(M.get('독촉', [])):
@@ -99,7 +118,8 @@ if MODE == 'daily' and (dow != 0 or os.environ.get('FORCE')):
     lines = []
     for k in kids:
         t = k['day'].get('test') or {}
-        detail = {'레벨 전': '아직 레벨 테스트를 안 봤어요', '외우기만': '외우기는 했는데 시험을 아직 안 봤어요', '안 함': '오늘 공부 안 함',
+        nv = len([x for x in (k['p'].get('placements') or []) if x.get('valid')])
+        detail = {'레벨 전': f'레벨 테스트 {nv}/3', '외우기만': '외우기는 했는데 시험을 아직 안 봤어요', '안 함': '오늘 공부 안 함',
                   '함': f'{t.get("score")}점 ({t.get("c")}/{t.get("n")}) · {k["p"].get("streak", 0)}일 연속'}[k['state']]
         lines.append(f'{icon[k["state"]]} **{k["name"]}** — {detail}')
     say(f'📒 **달달 {today.month}/{today.day} ({"일월화수목금토"[dow]})**\n' + ('\n'.join(lines) or '아직 로그인한 아이가 없어요'))
@@ -108,3 +128,5 @@ if MODE == 'daily' and (dow != 0 or os.environ.get('FORCE')):
 slots = {'mapValue': {'fields': {key: {'arrayValue': {'values': [{'stringValue': s} for s in sorted(sent_today)]}}}}}
 http(f'{BASE}/users/{uid}?updateMask.fieldPaths=lastPosted&updateMask.fieldPaths=sentSlots',
      {'fields': {'lastPosted': {'integerValue': str(last)}, 'sentSlots': slots}}, tok, 'PATCH')
+http(f'{BASE}/users/{uid}?updateMask.fieldPaths=placeNotified',
+     {'fields': {'placeNotified': {'arrayValue': {'values': [{'stringValue': x} for x in sorted(place_sent)]}}}}, tok, 'PATCH')

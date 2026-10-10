@@ -11,22 +11,28 @@ with sync_playwright() as pw:
     pg.goto(U); pg.wait_for_timeout(1500)
     ck('로그인 화면', '달달' in pg.inner_text('#app'))
     pg.fill('#ln','E2E'); pg.click("text=학생으로 시작"); pg.wait_for_timeout(600)
-    ck('홈: 레벨 테스트 안내', '레벨 테스트' in pg.inner_text('#app'))
-    pg.click("text=레벨 테스트 시작"); pg.wait_for_timeout(300); pg.click("text=시작하기"); pg.wait_for_timeout(300)
-    n=0
-    while pg.query_selector('.wcard .word') and n<200:
-        w=pg.inner_text('.wcard .word').strip(); i=pg.evaluate("w=>BYW[w]?BYW[w].i:-1",w)
-        pg.click('.pair .yes' if 0<=i<1500 else '.pair .no'); n+=1
-    ck('배치 110문항', n==110, n)
+    ck('홈: 레벨 테스트 안내', '레벨 테스트 3번' in pg.inner_text('#app') and '하루 20단어' in pg.inner_text('#app'))
+    def run_place():
+        n=0
+        while pg.query_selector('.wcard .word') and n<200:
+            w=pg.inner_text('.wcard .word').strip(); i=pg.evaluate("w=>BYW[w]?BYW[w].i:-1",w)
+            pg.click('.pair .yes' if 0<=i<1500 else '.pair .no'); n+=1
+        return n
+    pg.click("text=1회차 시작"); pg.wait_for_timeout(300); pg.click("#app >> text=1회차 시작"); pg.wait_for_timeout(300)
+    n=run_place(); ck('배치 110문항', n==110, n)
     t=pg.inner_text('#app'); ck('결과 화면', '내 레벨' in t, t[:100])
     R=pg.evaluate("S.placements[0].R"); ck('경계 ≈1500 (got %s)'%R, abs(R-1500)<450)
-    pg.click("text=한 번 더 보기"); pg.wait_for_timeout(300); n=0
-    while pg.query_selector('.wcard .word') and n<200:
-        w=pg.inner_text('.wcard .word').strip(); i=pg.evaluate("w=>BYW[w]?BYW[w].i:-1",w)
-        pg.click('.pair .yes' if 0<=i<1500 else '.pair .no'); n+=1
-    ck('2회차 문항 겹침 없음', pg.evaluate("new Set(S.placements[0].items).size + new Set(S.placements[1].items).size === new Set([...S.placements[0].items,...S.placements[1].items]).size"))
-    ck('2회 기록', pg.evaluate("S.placements.length")==2)
-    pg.click("text=이 레벨로 시작하기"); pg.wait_for_timeout(500)
+    ck('2회차 잠김(3시간)', '2회차는' in t and '부터' in t)
+    pg.click("text=홈으로"); pg.wait_for_timeout(300)
+    ck('홈: 공부 잠김', '1 / 3' in pg.inner_text('#app') and '오늘의' not in pg.inner_text('#app'))
+    for k in (2,3):
+        pg.evaluate("S.placements[S.placements.length-1].at -= 4*3600*1000; render()"); pg.wait_for_timeout(300)
+        pg.click(f"text={k}회차 시작"); pg.wait_for_timeout(300); pg.click(f"#app >> text={k}회차 시작"); pg.wait_for_timeout(300)
+        run_place()
+        if k<3: pg.click("text=홈으로"); pg.wait_for_timeout(300)
+    ck('3회차 실재어 겹침 없음', pg.evaluate("(()=>{const a=S.placements.flatMap(p=>p.items).filter(w=>BYW[w]); return new Set(a).size===a.length})()"))
+    ck('3회 기록', pg.evaluate("validN()")==3)
+    pg.click("text=공부 시작하기"); pg.wait_for_timeout(500)
     ck('홈: 회색 구역 안내', '경계 근처 확인' in pg.inner_text('#app'))
     lo,hi=pg.evaluate("[S.lo,S.hi]"); ck('구역 lo<hi', lo<hi, (lo,hi))
     pg.click("text=확인 시작"); pg.wait_for_timeout(300)
@@ -35,7 +41,7 @@ with sync_playwright() as pw:
         pg.click('.pair .yes' if k%2 else '.pair .no'); k+=1
     ck('회색 구역 %d개 처리 후 홈'%k, k==hi-lo and '오늘의' in pg.inner_text('#app') or '쉬는 날' in pg.inner_text('#app') or '주간 복습' in pg.inner_text('#app'), pg.inner_text('#app')[:200])
     # 강제로 월요일 하루 생성
-    pg.evaluate("ensureDay('2026-10-12')"); nw=pg.evaluate("S.days['2026-10-12'].words.length"); ck('월요일 30단어', nw==30, nw)
+    pg.evaluate("ensureDay('2026-10-12')"); nw=pg.evaluate("S.days['2026-10-12'].words.length"); ck('월요일 20단어', nw==20, nw)
     pg.evaluate("Study.start('2026-10-12')"); pg.wait_for_timeout(300)
     ck('학습 카드', pg.query_selector('.wcard .word') is not None)
     pg.click('.wcard'); pg.wait_for_timeout(100); ck('뜻 표시(한글+영영)', pg.query_selector('.wcard .ko') and pg.query_selector('.wcard .en'))
@@ -55,9 +61,9 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(120)
         if not pg.query_selector("text=다음"): print('DEBUG', q, pg.inner_text('#app')[:300], pg.evaluate("Test.submitted"), errs); break
         pg.click("text=다음"); pg.wait_for_timeout(80); q+=1
-    t=pg.inner_text('#app'); ck('시험 30문제 후 점수', q==30 and '점' in t, (q,t[:80]))
+    t=pg.inner_text('#app'); ck('시험 20문제 후 점수', q==20 and '점' in t, (q,t[:80]))
     sc=pg.evaluate("S.days['2026-10-12'].test.score"); ck('점수 기록 (%s)'%sc, 80<=sc<100)
-    ck('오답 기록', pg.evaluate("Object.keys(S.wrong).length")>=3)
+    ck('오답 기록', pg.evaluate("Object.keys(S.wrong).length")>=2)
     pg.click("text=홈으로"); pg.wait_for_timeout(400)
     pg.click("nav button:has-text('단어장')"); pg.wait_for_timeout(300); pg.fill('input.field','absor'); pg.wait_for_timeout(200)
     ck('단어장 검색', 'absorb' in pg.inner_text('#app'))

@@ -87,6 +87,9 @@ h3{font-size:17px;font-weight:600;margin:0 0 6px}
 .seg{display:inline-flex;background:var(--bg);border-radius:10px;padding:3px}
 .seg button{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2)}
 .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.guide{margin:6px 0 0;padding-left:20px;font-size:15px;line-height:1.55}
+.guide li{margin:6px 0}
+.guide b{color:var(--ink)}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .swatches button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--ink2);padding:6px 4px;border-radius:12px;min-width:52px}
 .swatches i{width:30px;height:30px;border-radius:50%;display:block;border:3px solid transparent}
@@ -181,6 +184,22 @@ const DET = {A1:'10~20', A2:'25~55', B1:'60~95', B2:'100~125', C1:'130~150'};
 const PB_N = 20, PB_PER = 4, P_NAWL = 0, P_FAKE = 30;     // 배치 테스트: 20구간×4 + 가짜 30 = 110
 const GRAY_MIN = 250, GRAY_MAX = 900, FA_HARD = 0.40, FA_WARN = 0.25;
 const PLACE_MAX = 3;
+const PLACE_GAP = 3*60*60*1000;   // 레벨 테스트 회차 사이 간격 (3시간)
+function validN(){ return S.placements.filter(p=>p.valid).length; }
+function placeDone(){ return validN() >= PLACE_MAX; }
+function placeWait(){ // 다음 회차까지 남은 ms. 직전 회차가 무효면 바로 다시 볼 수 있음
+  if(placeDone() || !S.placements.length) return 0;
+  const last = S.placements[S.placements.length-1]; if(!last.valid) return 0;
+  return Math.max(0, last.at + PLACE_GAP - Date.now()); }
+function nextAt(){ return S.placements[S.placements.length-1].at + PLACE_GAP; }
+const GUIDE = `<ol class="guide">
+  <li><b>레벨 테스트 3번</b> — 한 번에 6~7분, 단어 110개를 보고 안다/모른다만 고르기</li>
+  <li><b>3시간 간격</b> — 연달아 보면 그날 컨디션이 결과에 섞여요. 다음 회차가 열리면 디스코드로 알려 줘요</li>
+  <li><b>3번을 다 끝내야 공부 시작</b> — 세 번의 결과를 모아 내 출발점을 정해요</li>
+  <li><b>하루 20단어</b> — 월~금 외우고 바로 시험, 토요일 복습, 일요일 쉼</li>
+</ol>`;
+function fmtWait(ms){ const m = Math.ceil(ms/60000); const h = Math.floor(m/60); return (h ? h+'시간 ' : '') + (m%60 ? (m%60)+'분' : ''); }
+function fmtClock(t){ return new Date(t).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'}); }
 
 /* ---------- 상태 ---------- */
 let WORDS = [], BYW = {}, FAKES = [];
@@ -361,19 +380,21 @@ const Place = {
     if(Place.phase === 'result') return Place.result();
   },
   intro(){
-    const n = S.placements.length;
+    const n = validN();
     app.innerHTML = `
-      <h1>레벨 테스트</h1><p class="sub">내가 어디서부터 모르는지 찾습니다 · 약 6분</p>
+      <h1>레벨 테스트</h1><p class="sub">${n ? `${n} / ${PLACE_MAX}회 완료` : '내가 어디서부터 모르는지 찾아요'}</p>
+      ${n ? '' : `<div class="card">${GUIDE}</div>`}
       <div class="card">
-        <h3>${n ? `${n}회 완료 · 최대 ${PLACE_MAX}회` : '110개 단어, 안다 / 모른다만 고르기'}</h3>
-        <p class="muted" style="margin:6px 0 0">가짜 단어가 섞여 있습니다. 모르는 단어에 '안다'를 누르면 그만큼 깎이니, 헷갈리면 <b>모른다</b>.</p>
-        <p class="small">· 2~3초 안에 뜻이 떠오르면 '안다' · "본 적은 있는데"는 '모른다'<br>· 2~3번 보면 결과가 더 정확해집니다 (중앙값으로 확정)</p>
+        <h3>이렇게 보세요</h3>
+        <p class="muted" style="margin:6px 0 0">가짜 단어가 섞여 있어요. 모르는 단어에 '안다'를 누르면 그만큼 깎이니, 헷갈리면 <b>모른다</b>.</p>
+        <p class="small">· 2~3초 안에 뜻이 떠오르면 '안다' · "본 적은 있는데"는 '모른다'</p>
         <div style="height:12px"></div>
-        ${n < PLACE_MAX ? `<button class="btn" onclick="Place.begin()">${n ? '다시 보기' : '시작하기'}</button>` : `<p class="small">3회를 모두 보았습니다.</p>`}
-        ${n ? `<div style="height:8px"></div><button class="btn secondary" onclick="route='home';render()">이 결과로 시작하기</button>` : ''}
+        ${placeDone() ? `<button class="btn" onclick="route='home';render()">공부 시작하기</button>` : placeWait() ? Place.waitBox() : `<button class="btn" onclick="Place.begin()">${n ? `${n+1}회차 시작` : '1회차 시작'}</button>`}
       </div>
-      ${n ? Place.history() : ''}`;
+      ${S.placements.length ? Place.history() : ''}`;
   },
+  waitBox(){ const w = placeWait();
+    return `<div class="card tight" style="background:var(--tint);box-shadow:none"><b>${validN()+1}회차는 ${fmtClock(nextAt())}부터</b> <span class="small">(${fmtWait(w)} 뒤)</span><p class="small" style="margin:6px 0 0">연달아 보면 그날 컨디션이 결과에 섞여요. 3시간 쉬고 다시 봐야 진짜 실력에 가까워져요. 열리면 디스코드로 알려 줄게요.</p></div>`; },
   history(){
     return `<div class="card tight"><h3>지금까지</h3><div class="list">${S.placements.map((p,i)=>`<div class="row between"><span>${i+1}회 · ${new Date(p.at).toLocaleDateString('ko-KR')}</span><span>${p.valid ? `<span class="pill b">${lvOf(p.R)}</span> <span class="small">${p.R}번째 단어 부근</span>` : '<span class="pill r">무효 (가짜 단어 오답 과다)</span>'}</span></div>`).join('')}</div>
     ${S.lo!=null ? `<p class="small" style="margin:10px 0 0">확정 출발점: <b>${lvOf(S.lo)}</b> ${S.lo}번째 단어 · 확인 구역 ${S.lo}~${S.hi}</p>` : ''}</div>`;
@@ -398,7 +419,7 @@ const Place = {
     S.placements.push(r); finalizePlacement(); save(); Place.phase = 'result'; Place.render();
   },
   result(){
-    const r = S.placements[S.placements.length-1]; const n = S.placements.length;
+    const r = S.placements[S.placements.length-1];
     app.innerHTML = `
       <h1>${r.valid ? '결과' : '무효'}</h1>
       <div class="card">
@@ -406,10 +427,11 @@ const Place = {
         ${r.fa >= FA_WARN ? `<div class="pill a" style="margin-top:10px">가짜 단어를 ${Math.round(r.fa*100)}% '안다'고 했어요 — 실제보다 높게 나왔을 수 있어요</div>` : ''}`
         : `<p>가짜 단어의 ${Math.round(r.fa*100)}%를 '안다'고 눌렀습니다. 대충 누르면 결과를 쓸 수 없어요. 천천히 다시 봐 주세요.</p>`}
       </div>
-      ${n>1 ? Place.history() : ''}
+      ${S.placements.length>1 ? Place.history() : ''}
       <div class="card">
-        ${n < PLACE_MAX ? `<button class="btn secondary" onclick="Place.begin()">한 번 더 보기 (${n}/${PLACE_MAX})</button><div style="height:8px"></div>` : ''}
-        ${S.lo!=null ? `<button class="btn" onclick="route='home';render()">이 레벨로 시작하기</button>` : ''}
+        ${!r.valid ? `<button class="btn" onclick="Place.begin()">다시 보기</button>`
+          : placeDone() ? `<p class="small" style="margin:0 0 10px">레벨 테스트 3번을 모두 끝냈어요. 세 결과의 가운데 값으로 출발점을 정했어요.</p><button class="btn" onclick="route='home';render()">공부 시작하기</button>`
+          : Place.waitBox()+`<div style="height:8px"></div><button class="btn plain" onclick="route='home';render()">홈으로</button>`}
       </div>`;
   }
 };
@@ -559,16 +581,20 @@ function calcStreak(){ let s=0; const t = todayKey(); let d = new Date(t+'T00:00
    ===================================================================== */
 async function Home(){
   const t = todayKey(); const d = dow(t);
-  if(S.lo == null){
+  if(!placeDone()){
+    const n = validN(); const w = placeWait();
     app.innerHTML = `<h1>안녕, ${esc(USER.name)}</h1><p class="sub">외울 때까지, 달달</p>
-      <div class="card"><h2>먼저 레벨 테스트</h2><p class="muted">내가 어디서부터 모르는지 찾아야 거기서부터 외울 수 있어요. 6분이면 됩니다.</p><button class="btn" onclick="route='place';Place.phase='intro';render()">레벨 테스트 시작</button></div>`;
+      <div class="card"><h2>먼저 레벨 테스트 3번</h2>${GUIDE}</div>
+      <div class="card"><div class="row between" style="margin-bottom:12px"><h3 style="margin:0">진행</h3><span class="pill b">${n} / ${PLACE_MAX}</span></div>
+        <div class="bar" style="margin-bottom:14px"><i style="width:${n/PLACE_MAX*100}%"></i></div>
+        ${w ? Place.waitBox() : `<button class="btn" onclick="route='place';Place.phase='intro';render()">${n ? `${n+1}회차 시작` : '1회차 시작'}</button>`}</div>`;
     return;
   }
   const gray = grayList();
   if(!S.grayDone && gray.length){
     app.innerHTML = `<h1>안녕, ${esc(USER.name)}</h1><p class="sub">레벨 ${S.cefr} · 출발점 ${S.lo}번째 단어</p>
       <div class="card"><h2>경계 근처 확인</h2><p class="muted">레벨 테스트로 찾은 경계 근처의 단어 <b>${gray.length}개</b>를 하나씩 안다/모른다로 표시합니다. 아는 단어는 외울 목록에서 빠지니 정확하게 해 주세요. 나눠서 해도 됩니다.</p>
-      <button class="btn" onclick="route='gray';render()">확인 시작</button><div style="height:8px"></div><button class="btn plain" onclick="route='place';Place.phase='intro';render()">레벨 테스트 다시 보기 (${S.placements.length}/${PLACE_MAX})</button></div>`;
+      <button class="btn" onclick="route='gray';render()">확인 시작</button></div>`;
     return;
   }
   const day = ensureDay(t); const wk = weekKeys(t); const prof = cefrProfile(); const wrongs = wrongList();
@@ -617,8 +643,8 @@ function Settings(){
       <label class="row" style="margin-top:10px;font-size:15px"><input type="checkbox" ${S.settings.auto!==false?'checked':''} onchange="S.settings.auto=this.checked;save()"> 자동 조절 (3일 연속 90점 이상이면 +5, 70점 미만이면 −5, 범위 15~40)</label>
       <h3 style="margin-top:14px">색</h3><div class="swatches">${THEMES.map(([k,n,c])=>`<button class="${(S.settings.theme||'mint')===k?'on':''}" onclick="S.settings.theme='${k}';applyTheme();save();Settings()"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
       <h3 style="margin-top:14px">뜻 표시</h3><div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Settings()">한글만</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Settings()">한글 + 영영</button></div></div>
-    <div class="card"><h3>레벨</h3><p class="muted">${S.lo!=null?`${S.cefr} · 출발점 ${S.lo}번째 · 테스트 ${S.placements.length}회`:'아직 없음'}</p><button class="btn secondary" onclick="route='place';Place.phase='intro';render()">레벨 테스트 ${S.placements.length?'다시 보기':'시작'}</button>
-      ${S.placements.length>=PLACE_MAX?`<div style="height:8px"></div><button class="btn plain" onclick="if(confirm('레벨 테스트 기록을 지우고 처음부터 다시 봅니다. 진도는 유지됩니다.')){S.placements=[];S.lo=null;S.hi=null;S.grayDone=false;save();route='place';Place.phase='intro';render();}">기록 지우고 처음부터</button>`:''}</div>
+    <div class="card"><h3>레벨</h3><p class="muted">${S.lo!=null?`${S.cefr} · 출발점 ${S.lo}번째 · 테스트 ${validN()}/${PLACE_MAX}회`:'아직 없음'}</p><button class="btn secondary" onclick="route='place';Place.phase='intro';render()">레벨 테스트 보기</button>
+      ${placeDone()?`<div style="height:8px"></div><button class="btn plain" onclick="if(confirm('레벨 테스트 기록을 지우고 처음부터 다시 봅니다. 진도는 유지됩니다.')){S.placements=[];S.lo=null;S.hi=null;S.grayDone=false;save();route='place';Place.phase='intro';render();}">기록 지우고 처음부터</button>`:''}</div>
     <div class="card"><h3>데이터</h3><button class="btn plain" onclick="Settings.exportJson()">내보내기 (JSON)</button><div style="height:8px"></div><button class="btn danger" onclick="Auth.signOut()">로그아웃</button></div>
     <div class="footer">달달 v${VERSION} · 제작 Educclesia Group<br>단어 데이터: NGSL·NAWL 1.2 (Browne, Culligan &amp; Phillips, CC BY-SA 4.0) · CEFR 등급: Oxford 3000/5000 (가정용)</div>`;
 }
