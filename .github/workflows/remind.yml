@@ -1,0 +1,17 @@
+name: 달달 저녁 알림
+on:
+  schedule:
+    - cron: '30 12 * * *'   # UTC 12:30 = 한국 21:30 매일
+  workflow_dispatch:
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install firebase-admin
+      - run: python scripts/remind.py
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}

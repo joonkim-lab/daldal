@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f1e7">
+<title>달달</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d6b5a'/%3E%3Ctext x='32' y='42' font-size='28' text-anchor='middle' fill='white' font-family='-apple-system,sans-serif' font-weight='700'%3E영%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f1e7; --card:#fffdf8; --ink:#1f1b16; --ink2:#6f675c; --ink3:#a79d8f;
+  --line:rgba(60,40,10,.09); --accent:#1d6b5a; --accent-ink:#ffffff; --green:#2f8f5b; --red:#c9472f; --amber:#d9931c;
+  --r:18px; --r2:12px; --sh:0 1px 2px rgba(60,40,10,.05), 0 8px 24px rgba(60,40,10,.07);
+}
+@media (prefers-color-scheme: dark){ :root{ --bg:#17150f; --card:#221f18; --ink:#f3ede2; --ink2:#a89f90; --ink3:#6f675c; --line:rgba(255,240,210,.1); --accent:#4fb08f; --accent-ink:#0e1a15; --sh:none; } }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input{font:inherit}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 0}
+h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:20px 0 4px}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0 0 10px}
+h3{font-size:17px;font-weight:600;margin:0 0 6px}
+.sub{color:var(--ink2);font-size:15px;margin:0 0 18px}
+.card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:14px}
+.card.tight{padding:14px 16px}
+.row{display:flex;align-items:center;gap:12px}
+.row.between{justify-content:space-between}
+.grow{flex:1}
+.muted{color:var(--ink2)}
+.small{font-size:13px;color:var(--ink2)}
+.tiny{font-size:12px;color:var(--ink3)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;font-weight:600;font-size:17px;background:var(--accent);color:var(--accent-ink);width:100%;transition:transform .08s,opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn.secondary{background:rgba(29,107,90,.12);color:var(--accent)}
+.btn.plain{background:var(--bg);color:var(--ink)}
+.btn.danger{background:rgba(201,71,47,.1);color:var(--red)}
+.btn.sm{padding:9px 14px;font-size:15px;width:auto;border-radius:11px}
+.btn.xs{padding:6px 10px;font-size:13px;width:auto;border-radius:9px}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg);color:var(--ink2)}
+.pill.b{background:rgba(29,107,90,.13);color:var(--accent)}
+.pill.g{background:rgba(47,143,91,.14);color:#2a7a4f}
+.pill.r{background:rgba(201,71,47,.12);color:var(--red)}
+.pill.a{background:rgba(217,147,28,.16);color:#9a6208}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat>div{background:var(--bg);border-radius:var(--r2);padding:12px 10px;text-align:center}
+.stat b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.stat span{font-size:12px;color:var(--ink2)}
+.bar{height:6px;background:var(--bg);border-radius:999px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
+.seg{display:inline-flex;background:var(--bg);border-radius:10px;padding:3px}
+.seg button{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(60,40,10,.12)}
+.list{display:flex;flex-direction:column}
+.list>div{padding:12px 0;border-bottom:1px solid var(--line)}
+.list>div:last-child{border-bottom:0}
+input.field,select.field,textarea.field{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:17px;outline:none}
+input.field:focus{border-color:var(--accent)}
+textarea.field{min-height:90px;resize:vertical}
+label.lbl{display:block;font-size:13px;color:var(--ink2);margin:10px 0 6px;font-weight:600}
+nav.tab{position:fixed;left:0;right:0;bottom:0;background:rgba(255,253,248,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:10}
+@media (prefers-color-scheme: dark){ nav.tab{background:rgba(34,31,24,.88)} }
+nav.tab button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--ink3);padding:4px 14px;font-weight:500}
+nav.tab button.on{color:var(--accent)}
+nav.tab svg{width:26px;height:26px}
+.hidden{display:none!important}
+/* 학습 카드 */
+.wcard{background:var(--card);border-radius:24px;padding:40px 24px 28px;box-shadow:var(--sh);text-align:center;min-height:300px;display:flex;flex-direction:column;justify-content:center;position:relative}
+.wcard .word{font-size:40px;font-weight:700;letter-spacing:-.02em;word-break:break-word;font-family:"New York","Iowan Old Style","Palatino",Georgia,serif}
+.wcard .pos{font-size:13px;color:var(--ink3);margin-top:2px}
+.wcard .ko{font-size:24px;font-weight:600;margin-top:18px}
+.wcard .en{font-size:15px;color:var(--ink2);margin-top:10px;line-height:1.45}
+.wcard .lv{position:absolute;top:14px;left:16px}
+.wcard .idx{position:absolute;top:14px;right:16px;font-size:13px;color:var(--ink3)}
+.choices{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.choices button{background:var(--card);border-radius:14px;padding:14px 16px;text-align:left;font-size:17px;box-shadow:var(--sh);border:2px solid transparent}
+.choices button.ok{border-color:var(--green)}
+.choices button.bad{border-color:var(--red)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.pair .btn{padding:18px}
+.pair .no{background:rgba(201,71,47,.1);color:var(--red)}
+.pair .yes{background:rgba(47,143,91,.14);color:#2a7a4f}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:30;padding:0}
+.modal>div{background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));width:100%;max-width:560px;max-height:88vh;overflow:auto}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.week>div{background:var(--bg);border-radius:12px;padding:10px 4px;text-align:center;font-size:12px;color:var(--ink2)}
+.week>div b{display:block;font-size:15px;color:var(--ink);margin-bottom:2px}
+.week>div.done{background:rgba(47,143,91,.14);color:#2a7a4f}
+.week>div.done b{color:#2a7a4f}
+.week>div.today{outline:2px solid var(--accent)}
+.week>div.miss{background:rgba(201,71,47,.08);color:var(--red)}
+.cefr{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cefr>div{background:var(--bg);border-radius:12px;padding:10px 4px;text-align:center}
+.cefr b{display:block;font-size:18px}
+.cefr span{font-size:11px;color:var(--ink2)}
+.login{min-height:80vh;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.logo{width:88px;height:88px;border-radius:22px;background:var(--accent);color:#fff;font-size:44px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 10px 30px rgba(29,107,90,.35)}
+kbd{font-family:inherit;background:var(--bg);padding:1px 6px;border-radius:6px;font-size:13px}
+.footer{text-align:center;font-size:12px;color:var(--ink3);padding:24px 0 8px}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"></div>
+<nav class="tab hidden" id="nav"></nav>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   달달 — 외울 때까지, 달달
+   제작 Educclesia Group · 데이터 NGSL/NAWL(CC BY-SA 4.0) + Oxford 3000/5000 CEFR 등급
+   ===================================================================== */
+const CONFIG = {
+  firebase: null,            // 콘솔의 firebaseConfig 객체를 여기에 붙여넣으면 클라우드 모드 (없으면 이 기기 로컬 저장)
+  admins: ['joon.kim@educclesia.com'],
+  students: {               // 이메일: 표시 이름
+  },
+  discordWebhook: '',        // 시험 결과를 바로 보낼 채널 웹훅 (비우면 사용 안 함)
+  wordsUrl: 'words.json',
+  newPerDay: 30,
+  testPerDay: 30,
+  reminderHour: 21,
+};
+const VERSION = '1.0';
+const LEVELS = ['A1','A2','B1','B2','C1'];
+const DET = {A1:'10~20', A2:'25~55', B1:'60~95', B2:'100~125', C1:'130~150'};
+const PB_N = 20, PB_PER = 4, P_NAWL = 0, P_FAKE = 30;     // 배치 테스트: 20구간×4 + 가짜 30 = 110
+const GRAY_MIN = 250, GRAY_MAX = 900, FA_HARD = 0.40, FA_WARN = 0.25;
+const PLACE_MAX = 3;
+
+/* ---------- 상태 ---------- */
+let WORDS = [], BYW = {}, FAKES = [];
+let USER = null;      // {uid,email,name,role}
+let S = null;         // 학생 진도 문서
+let route = 'home';
+let unsub = null;
+
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1800); }
+function todayKey(d){ d = d || new Date(); const k = new Date(d.getTime() - d.getTimezoneOffset()*60000); return k.toISOString().slice(0,10); }
+function dayNum(k){ return Math.floor(new Date(k+'T00:00:00').getTime()/86400000); }
+function dow(k){ return new Date(k+'T00:00:00').getDay(); } // 0 일 … 6 토
+const DOWK = ['일','월','화','수','목','금','토'];
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function shuffled(arr, rnd){ rnd = rnd || Math.random; const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function hash(s){ let h=2166136261; for(const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h>>>0; }
+
+/* ---------- 저장소 (Firebase 또는 로컬) ---------- */
+const Store = {
+  cloud: false, db: null, auth: null,
+  async init(){
+    if(CONFIG.firebase && window.firebase){
+      firebase.initializeApp(CONFIG.firebase);
+      Store.auth = firebase.auth(); Store.db = firebase.firestore();
+      try{ await Store.db.enablePersistence({synchronizeTabs:true}); }catch(e){}
+      Store.cloud = true;
+    }
+  },
+  lk(k){ return 'daldal.'+k; },
+  async get(col, id){
+    if(Store.cloud){ const d = await Store.db.collection(col).doc(id).get(); return d.exists ? d.data() : null; }
+    try{ const v = localStorage.getItem(Store.lk(col+'/'+id)); return v ? JSON.parse(v) : null; }catch(e){ return null; }
+  },
+  async set(col, id, data, merge){
+    if(Store.cloud){ return Store.db.collection(col).doc(id).set(data, {merge:!!merge}); }
+    let cur = merge ? (await Store.get(col,id) || {}) : {};
+    Object.assign(cur, data);
+    try{ localStorage.setItem(Store.lk(col+'/'+id), JSON.stringify(cur)); }catch(e){}
+  },
+  async list(col, where){
+    if(Store.cloud){
+      let q = Store.db.collection(col);
+      if(where) q = q.where(where[0], where[1], where[2]);
+      const r = await q.get(); return r.docs.map(d => ({id:d.id, ...d.data()}));
+    }
+    const out = [], pre = Store.lk(col+'/');
+    for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k.startsWith(pre)){ const v = JSON.parse(localStorage.getItem(k)); if(!where || (where[1]==='==' ? v[where[0]]===where[2] : where[1]==='array-contains' ? (v[where[0]]||[]).includes(where[2]) : true)) out.push({id:k.slice(pre.length), ...v}); } }
+    return out;
+  },
+  newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+};
+
+/* ---------- 로그인 ---------- */
+const Auth = {
+  async start(){
+    if(Store.cloud){
+      Store.auth.onAuthStateChanged(async u => {
+        if(!u){ USER = null; render(); return; }
+        const email = (u.email||'').toLowerCase();
+        const role = CONFIG.admins.map(x=>x.toLowerCase()).includes(email) ? 'admin' : (CONFIG.students[email] ? 'student' : 'none');
+        USER = {uid:u.uid, email, name: CONFIG.students[email] || u.displayName || email.split('@')[0], role};
+        if(role === 'none'){ render(); return; }
+        await Store.set('users', u.uid, {email, name:USER.name, role, lastSeen:Date.now()}, true);
+        await loadStudent(); render();
+      });
+    } else {
+      const saved = JSON.parse(localStorage.getItem(Store.lk('local-user')) || 'null');
+      if(saved){ USER = saved; await loadStudent(); }
+      render();
+    }
+  },
+  async signIn(){
+    if(Store.cloud){ const p = new firebase.auth.GoogleAuthProvider(); try{ await Store.auth.signInWithPopup(p); }catch(e){ await Store.auth.signInWithRedirect(p); } }
+  },
+  async localSignIn(name, role){
+    USER = {uid:'local-'+hash(name), email:name+'@local', name, role};
+    localStorage.setItem(Store.lk('local-user'), JSON.stringify(USER));
+    await Store.set('users', USER.uid, {email:USER.email, name, role}, true);
+    await loadStudent(); route='home'; render();
+  },
+  async signOut(){ if(Store.cloud) await Store.auth.signOut(); else localStorage.removeItem(Store.lk('local-user')); USER=null; S=null; route='home'; render(); }
+};
+
+/* ---------- 학생 진도 ---------- */
+function blankStudent(){
+  return { v:1, diag:{}, placements:[], lo:null, hi:null, grayDone:false, cursor:0,
+    days:{}, wrong:{}, settings:{showEn:true, newPerDay:CONFIG.newPerDay}, streak:0, lastStudy:null, cefr:null };
+}
+async function loadStudent(){
+  if(!USER || USER.role !== 'student'){ S = null; return; }
+  S = Object.assign(blankStudent(), await Store.get('progress', USER.uid) || {});
+  S.settings = Object.assign({showEn:true, newPerDay:CONFIG.newPerDay}, S.settings||{});
+}
+let saveT = null;
+function save(){ if(!S) return; clearTimeout(saveT); saveT = setTimeout(()=>{ if(S && USER) Store.set('progress', USER.uid, S); }, 300); }
+
+/* ---------- 단어 데이터 ---------- */
+async function loadWords(){
+  const r = await fetch(CONFIG.wordsUrl + '?v=' + VERSION); const d = await r.json();
+  WORDS = d.words; FAKES = d.fakes;
+  WORDS.forEach((w,i) => { w.i = i; BYW[w.w] = w; });
+}
+function lvOf(i){ return WORDS[i] ? WORDS[i].lv : '?'; }
+function levelBounds(){ const b = {}; WORDS.forEach(w => { if(!b[w.lv]) b[w.lv] = [w.i, w.i]; b[w.lv][1] = w.i; }); return b; }
+
+/* ---------- 구역 계산 ---------- */
+function isKnown(i){ const w = WORDS[i]; if(S.diag[w.w] === 'O') return true; if(S.diag[w.w] === 'X') return false; return S.lo != null && i < S.lo; }
+function learnedSet(){ const s = new Set(); for(const k in S.days) (S.days[k].words||[]).forEach(w => s.add(w)); return s; }
+function queue(){ // 아직 배우지 않았고 모르는 단어, 순서대로
+  const learned = learnedSet(); const out = [];
+  for(let i = 0; i < WORDS.length; i++){ if(isKnown(i)) continue; if(learned.has(WORDS[i].w)) continue; out.push(i); }
+  return out;
+}
+function cefrProfile(){ // 등급별 '아는 단어' 비율 (진단 + 학습 완료 반영)
+  const learned = learnedSet(); const b = {}; LEVELS.forEach(l => b[l] = {n:0, k:0});
+  WORDS.forEach(w => { const x = b[w.lv]; if(!x) return; x.n++; if(isKnown(w.i) || (learned.has(w.w) && (S.wrong[w.w]||0) === 0)) x.k++; });
+  return b;
+}
+
+/* =====================================================================
+   레벨 테스트 — 110문항(실재어 80 + 가짜 30), 최대 3회, 중앙값으로 확정
+   ===================================================================== */
+function buildPlacement(seed, avoid){
+  const rnd = mulberry32(seed>>>0); const items = []; const N = WORDS.length; const size = N / PB_N;
+  for(let b = 0; b < PB_N; b++){
+    const a0 = Math.floor(b*size), a1 = Math.floor((b+1)*size);
+    let pool = []; for(let i=a0;i<a1;i++) if(!avoid.has(WORDS[i].w)) pool.push(i);
+    if(pool.length < PB_PER){ pool = []; for(let i=a0;i<a1;i++) pool.push(i); }
+    shuffled(pool, rnd).slice(0, PB_PER).forEach(i => items.push({w:WORDS[i].w, kind:'r', bin:b, i}));
+  }
+  let fp = FAKES.filter(w => !avoid.has(w)); if(fp.length < P_FAKE) fp = FAKES;
+  shuffled(fp, rnd).slice(0, P_FAKE).forEach(w => items.push({w, kind:'f'}));
+  return shuffled(items, rnd);
+}
+function fitLogistic(pts, N){
+  let best = {R:N/2, k:0.002, err:Infinity};
+  for(let R = -N*0.15; R <= N*1.2; R += N/200){
+    for(let i=0;i<28;i++){ const k = 0.0002*Math.pow(1.2,i); let err=0;
+      for(const pt of pts){ const q = 1/(1+Math.exp(k*(pt.x-R))); err += (pt.p-q)*(pt.p-q); }
+      if(err < best.err) best = {R,k,err}; }
+  }
+  return best;
+}
+function scorePlacement(items, answers){
+  const N = WORDS.length, size = N/PB_N; let fN=0,fYes=0; const bins=[]; for(let b=0;b<PB_N;b++) bins.push({n:0,yes:0});
+  for(const it of items){ const yes = !!answers[it.w]; if(it.kind==='f'){ fN++; if(yes) fYes++; } else { bins[it.bin].n++; if(yes) bins[it.bin].yes++; } }
+  const fa = fN ? fYes/fN : 0;
+  const corr = h => { const d = 1-fa; const v = d > .05 ? (h-fa)/d : 0; return Math.max(0, Math.min(1, v)); };
+  const pts = bins.map((b,i) => ({x:(i+.5)*size, p: b.n ? corr(b.yes/b.n) : 0}));
+  const fit = fitLogistic(pts, N);
+  const half = Math.max(GRAY_MIN, Math.min(GRAY_MAX, Math.log(3)/fit.k));
+  const lo = Math.max(0, Math.min(N-1, Math.round(fit.R - half)));
+  const hi = Math.min(N, Math.max(lo+150, Math.round(fit.R + half)));
+  return {R:Math.round(fit.R), k:fit.k, fa, lo, hi, bins:pts.map(q=>Math.round(q.p*100)), valid: fa < FA_HARD, at:Date.now()};
+}
+function finalizePlacement(){ // 유효한 회차들의 중앙값
+  const ok = S.placements.filter(p => p.valid); if(!ok.length) return;
+  const med = a => { const s = a.slice().sort((x,y)=>x-y); return s[Math.floor((s.length-1)/2)]; };
+  const R = med(ok.map(p=>p.R)); const half = med(ok.map(p=>Math.round((p.hi-p.lo)/2)));
+  S.lo = Math.max(0, Math.round(R-half)); S.hi = Math.min(WORDS.length, Math.max(S.lo+150, Math.round(R+half)));
+  S.cefr = lvOf(Math.min(WORDS.length-1, R));
+  // 레벨이 바뀌면 회색 구역을 다시 확인해야 함
+  S.grayDone = false; save();
+}
+function grayList(){ const out=[]; if(S.lo==null) return out; for(let i=S.lo;i<S.hi;i++){ const w=WORDS[i].w; if(S.diag[w]==null) out.push(i); } return out; }
+
+const Place = {
+  items:[], idx:0, ans:{}, phase:'intro', t0:0,
+  render(){
+    if(Place.phase === 'intro') return Place.intro();
+    if(Place.phase === 'run') return Place.question();
+    if(Place.phase === 'result') return Place.result();
+  },
+  intro(){
+    const n = S.placements.length;
+    app.innerHTML = `
+      <h1>레벨 테스트</h1><p class="sub">내가 어디서부터 모르는지 찾습니다 · 약 6분</p>
+      <div class="card">
+        <h3>${n ? `${n}회 완료 · 최대 ${PLACE_MAX}회` : '110개 단어, 안다 / 모른다만 고르기'}</h3>
+        <p class="muted" style="margin:6px 0 0">가짜 단어가 섞여 있습니다. 모르는 단어에 '안다'를 누르면 그만큼 깎이니, 헷갈리면 <b>모른다</b>.</p>
+        <p class="small">· 2~3초 안에 뜻이 떠오르면 '안다' · "본 적은 있는데"는 '모른다'<br>· 2~3번 보면 결과가 더 정확해집니다 (중앙값으로 확정)</p>
+        <div style="height:12px"></div>
+        ${n < PLACE_MAX ? `<button class="btn" onclick="Place.begin()">${n ? '다시 보기' : '시작하기'}</button>` : `<p class="small">3회를 모두 보았습니다.</p>`}
+        ${n ? `<div style="height:8px"></div><button class="btn secondary" onclick="route='home';render()">이 결과로 시작하기</button>` : ''}
+      </div>
+      ${n ? Place.history() : ''}`;
+  },
+  history(){
+    return `<div class="card tight"><h3>지금까지</h3><div class="list">${S.placements.map((p,i)=>`<div class="row between"><span>${i+1}회 · ${new Date(p.at).toLocaleDateString('ko-KR')}</span><span>${p.valid ? `<span class="pill b">${lvOf(p.R)}</span> <span class="small">${p.R}번째 단어 부근</span>` : '<span class="pill r">무효 (가짜 단어 오답 과다)</span>'}</span></div>`).join('')}</div>
+    ${S.lo!=null ? `<p class="small" style="margin:10px 0 0">확정 출발점: <b>${lvOf(S.lo)}</b> ${S.lo}번째 단어 · 확인 구역 ${S.lo}~${S.hi}</p>` : ''}</div>`;
+  },
+  begin(){
+    const avoid = new Set(); S.placements.forEach(p => (p.items||[]).forEach(w => avoid.add(w)));
+    Place.items = buildPlacement(hash(USER.uid + ':' + S.placements.length + ':' + Date.now()), avoid);
+    Place.idx = 0; Place.ans = {}; Place.phase = 'run'; Place.t0 = Date.now(); Place.render();
+  },
+  question(){
+    const it = Place.items[Place.idx]; if(!it) return Place.finish();
+    app.innerHTML = `
+      <div class="row between" style="margin-top:14px"><span class="small">${Place.idx+1} / ${Place.items.length}</span><button class="btn xs plain" onclick="Place.phase='intro';Place.render()">그만두기</button></div>
+      <div class="bar" style="margin:10px 0 18px"><i style="width:${Place.idx/Place.items.length*100}%"></i></div>
+      <div class="wcard"><div class="word">${esc(it.w)}</div><div class="small" style="margin-top:14px">뜻을 아나요?</div></div>
+      <div class="pair"><button class="btn no" onclick="Place.answer(false)">모른다</button><button class="btn yes" onclick="Place.answer(true)">안다</button></div>
+      <p class="tiny" style="text-align:center;margin-top:12px">키보드: ← 모른다 · → 안다</p>`;
+  },
+  answer(v){ const it = Place.items[Place.idx]; Place.ans[it.w] = v; Place.idx++; Place.render(); },
+  finish(){
+    const r = scorePlacement(Place.items, Place.ans); r.items = Place.items.map(x=>x.w); r.sec = Math.round((Date.now()-Place.t0)/1000);
+    S.placements.push(r); finalizePlacement(); save(); Place.phase = 'result'; Place.render();
+  },
+  result(){
+    const r = S.placements[S.placements.length-1]; const n = S.placements.length;
+    app.innerHTML = `
+      <h1>${r.valid ? '결과' : '무효'}</h1>
+      <div class="card">
+        ${r.valid ? `<div class="row between"><div><div class="small">내 레벨 (이번 회차)</div><div style="font-size:40px;font-weight:700;letter-spacing:-.02em">${lvOf(r.R)}</div><div class="small">DET 어휘 기준 약 ${DET[lvOf(r.R)]||''}점 구간</div></div><div style="text-align:right"><div class="small">경계</div><div style="font-size:22px;font-weight:600">${r.R}<span class="small">/${WORDS.length}</span></div></div></div>
+        ${r.fa >= FA_WARN ? `<div class="pill a" style="margin-top:10px">가짜 단어를 ${Math.round(r.fa*100)}% '안다'고 했어요 — 실제보다 높게 나왔을 수 있어요</div>` : ''}`
+        : `<p>가짜 단어의 ${Math.round(r.fa*100)}%를 '안다'고 눌렀습니다. 대충 누르면 결과를 쓸 수 없어요. 천천히 다시 봐 주세요.</p>`}
+      </div>
+      ${n>1 ? Place.history() : ''}
+      <div class="card">
+        ${n < PLACE_MAX ? `<button class="btn secondary" onclick="Place.begin()">한 번 더 보기 (${n}/${PLACE_MAX})</button><div style="height:8px"></div>` : ''}
+        ${S.lo!=null ? `<button class="btn" onclick="route='home';render()">이 레벨로 시작하기</button>` : ''}
+      </div>`;
+  }
+};
+document.addEventListener('keydown', e => { if(route==='place' && Place.phase==='run'){ if(e.key==='ArrowLeft') Place.answer(false); if(e.key==='ArrowRight') Place.answer(true); } });
+
+/* =====================================================================
+   회색 구역 확인 — 경계 근처 단어를 하나씩 O/X (세션 50개 단위)
+   ===================================================================== */
+const Gray = {
+  list:[], idx:0,
+  render(){
+    Gray.list = grayList();
+    if(!Gray.list.length){ S.grayDone = true; save(); route='home'; return render(); }
+    const i = Gray.list[0]; const w = WORDS[i]; const total = S.hi - S.lo, done = total - Gray.list.length;
+    app.innerHTML = `
+      <div class="row between" style="margin-top:14px"><span class="small">확인 구역 ${done} / ${total}</span><button class="btn xs plain" onclick="route='home';render()">나중에</button></div>
+      <div class="bar" style="margin:10px 0 18px"><i style="width:${done/total*100}%"></i></div>
+      <div class="wcard"><span class="lv pill b">${w.lv}</span><div class="word">${esc(w.w)}</div><div class="pos">${esc(w.pos)}</div><div class="small" style="margin-top:14px">뜻이 바로 떠오르나요?</div></div>
+      <div class="pair"><button class="btn no" onclick="Gray.mark('X')">모른다</button><button class="btn yes" onclick="Gray.mark('O')">안다</button></div>
+      <p class="tiny" style="text-align:center;margin-top:12px">'안다'로 표시한 단어는 학습에서 빠집니다 · 모르면 모른다고 하세요</p>`;
+  },
+  mark(v){ const i = Gray.list[0]; S.diag[WORDS[i].w] = v; save(); Gray.render(); }
+};
+document.addEventListener('keydown', e => { if(route==='gray'){ if(e.key==='ArrowLeft') Gray.mark('X'); if(e.key==='ArrowRight') Gray.mark('O'); } });
+
+/* =====================================================================
+   하루 공부 — 월~금 30단어: 외우기 → 시험 30문제. 토: 주간 복습 시험. 일: 쉼
+   ===================================================================== */
+function weekKeys(k){ const d = new Date(k+'T00:00:00'); const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay()+6)%7)); return [0,1,2,3,4,5,6].map(i => { const x = new Date(mon); x.setDate(mon.getDate()+i); return todayKey(x); }); }
+function ensureDay(k){
+  if(S.days[k]) return S.days[k];
+  const d = dow(k); const day = {words:[], kind: d===0 ? 'rest' : d===6 ? 'review' : 'new', learned:false, test:null};
+  if(day.kind === 'new'){ day.words = queue().slice(0, S.settings.newPerDay).map(i => WORDS[i].w); }
+  if(day.kind === 'review'){ const wk = weekKeys(k).slice(0,5); const pool = []; wk.forEach(x => { if(S.days[x]) pool.push(...S.days[x].words); }); day.words = pool; }
+  S.days[k] = day; save(); return day;
+}
+function wrongList(){ return Object.keys(S.wrong).filter(w => S.wrong[w] > 0).sort((a,b) => S.wrong[b]-S.wrong[a]); }
+
+const Study = {
+  k:null, cards:[], idx:0, flip:false, again:[], round:1,
+  start(k){ Study.k = k; const d = ensureDay(k); Study.cards = d.words.slice(); Study.idx=0; Study.flip=false; Study.again=[]; Study.round=1; route='study'; render(); },
+  render(){
+    const d = S.days[Study.k]; const w = BYW[Study.cards[Study.idx]];
+    if(!w){ // 라운드 끝
+      if(Study.again.length){ Study.cards = Study.again; Study.again=[]; Study.idx=0; Study.round++; return Study.render(); }
+      d.learned = true; save();
+      app.innerHTML = `<h1>다 외웠어요</h1><p class="sub">${d.words.length}단어 · ${Study.round}바퀴</p><div class="card"><p class="muted">이제 시험으로 확인합니다. 30문제, 객관식 15 + 철자 15.</p><button class="btn" onclick="Test.startDaily('${Study.k}')">시험 보기</button><div style="height:8px"></div><button class="btn plain" onclick="Study.start('${Study.k}')">한 번 더 외우기</button></div>`;
+      return;
+    }
+    const showEn = S.settings.showEn;
+    app.innerHTML = `
+      <div class="row between" style="margin-top:14px"><span class="small">${Study.round}바퀴 · ${Study.idx+1} / ${Study.cards.length}</span>
+        <div class="row"><div class="seg"><button class="${!showEn?'on':''}" onclick="S.settings.showEn=false;save();Study.render()">한글</button><button class="${showEn?'on':''}" onclick="S.settings.showEn=true;save();Study.render()">한글+영영</button></div><button class="btn xs plain" onclick="route='home';render()">나가기</button></div></div>
+      <div class="bar" style="margin:10px 0 18px"><i style="width:${Study.idx/Study.cards.length*100}%"></i></div>
+      <div class="wcard" onclick="Study.toggle()"><span class="lv pill b">${w.lv}</span><span class="idx">${Study.idx+1}</span>
+        <div class="word">${esc(w.w)}</div><div class="pos">${esc(w.pos)}</div>
+        ${Study.flip ? `<div class="ko">${esc(w.ko)}</div>${showEn ? `<div class="en">${esc(w.en)}</div>` : ''}` : `<div class="small" style="margin-top:22px">탭해서 뜻 보기</div>`}
+      </div>
+      ${Study.flip ? `<div class="pair"><button class="btn no" onclick="Study.grade(false)">다시</button><button class="btn yes" onclick="Study.grade(true)">외웠다</button></div>` : `<div style="margin-top:14px"><button class="btn" onclick="Study.toggle()">뜻 보기</button></div>`}
+      <p class="tiny" style="text-align:center;margin-top:12px">스페이스: 뜻 보기 · ← 다시 · → 외웠다</p>`;
+  },
+  toggle(){ Study.flip = !Study.flip; Study.render(); },
+  grade(ok){ if(!ok) Study.again.push(Study.cards[Study.idx]); Study.idx++; Study.flip=false; Study.render(); }
+};
+document.addEventListener('keydown', e => { if(route!=='study') return; if(e.key===' '){ e.preventDefault(); Study.toggle(); } if(Study.flip){ if(e.key==='ArrowLeft') Study.grade(false); if(e.key==='ArrowRight') Study.grade(true); } });
+
+/* =====================================================================
+   시험 — 객관식(뜻 고르기) / 주관식(철자). 매일 시험 + 관리자 지정 시험
+   ===================================================================== */
+function distractors(w, n, rnd){
+  const same = WORDS.filter(x => x.lv === w.lv && x.w !== w.w && x.ko !== w.ko);
+  return shuffled(same, rnd).slice(0, n).map(x => x.ko);
+}
+function buildQuestions(words, type, count, seed){
+  const rnd = mulberry32(seed>>>0); let ws = shuffled(words.filter(w => BYW[w]), rnd);
+  if(count && ws.length > count) ws = ws.slice(0, count);
+  return ws.map((wd, i) => {
+    const w = BYW[wd]; const t = type === 'mix' ? (i % 2 ? 'spell' : 'mcq') : type;
+    if(t === 'mcq'){ const ch = shuffled([w.ko, ...distractors(w, 3, rnd)], rnd); return {w:wd, t, choices:ch, a:w.ko}; }
+    return {w:wd, t, a:w.w};
+  });
+}
+function normSpell(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+async function postDiscord(text){ if(!CONFIG.discordWebhook) return; try{ await fetch(CONFIG.discordWebhook, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content:text})}); }catch(e){} }
+
+const Test = {
+  qs:[], idx:0, ans:[], meta:null, picked:null, submitted:false,
+  startDaily(k){ const d = S.days[k]; const n = Math.min(CONFIG.testPerDay, d.words.length); Test.meta = {kind:'daily', k, title: dow(k)===6 ? '주간 복습 시험' : '오늘의 시험'}; Test.qs = buildQuestions(d.words, 'mix', n, hash(USER.uid+k+Date.now())); Test.begin(); },
+  startWrong(){ const ws = wrongList().slice(0, 30); Test.meta = {kind:'wrong', title:'오답 다시 풀기'}; Test.qs = buildQuestions(ws, 'mix', 30, Date.now()); Test.begin(); },
+  startAssigned(t){ Test.meta = {kind:'assigned', id:t.id, title:t.title}; Test.qs = buildQuestions(t.words, t.type, t.count, hash(USER.uid + t.id)); Test.begin(); },
+  begin(){ Test.idx=0; Test.ans=[]; Test.picked=null; Test.submitted=false; route='test'; render(); },
+  render(){
+    const q = Test.qs[Test.idx]; if(!q) return Test.finish();
+    const w = BYW[q.w];
+    app.innerHTML = `
+      <div class="row between" style="margin-top:14px"><span class="small">${esc(Test.meta.title)} · ${Test.idx+1} / ${Test.qs.length}</span>${Test.meta.kind!=='assigned' ? `<button class="btn xs plain" onclick="route='home';render()">그만두기</button>`:''}</div>
+      <div class="bar" style="margin:10px 0 18px"><i style="width:${Test.idx/Test.qs.length*100}%"></i></div>
+      ${q.t === 'mcq' ? `
+        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span><div class="word">${esc(w.w)}</div><div class="pos">${esc(w.pos)}</div></div>
+        <div class="choices">${q.choices.map((c,i)=>`<button ${Test.submitted?'disabled':''} class="${Test.submitted ? (c===q.a?'ok': (Test.picked===c?'bad':'')) : ''}" onclick="Test.pick(${i})">${esc(c)}</button>`).join('')}</div>`
+      : `
+        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span><div class="ko" style="margin-top:0">${esc(w.ko)}</div>${S.settings.showEn ? `<div class="en">${esc(w.en)}</div>`:''}<div class="pos" style="margin-top:8px">${esc(w.pos)} · 영어 단어를 쓰세요</div></div>
+        <div style="margin-top:14px"><input id="spell" class="field" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="spelling" ${Test.submitted?'disabled':''} value="${Test.submitted?esc(Test.picked):''}"></div>
+        ${Test.submitted ? `<div class="card tight" style="margin-top:10px"><span class="pill ${normSpell(Test.picked)===q.a?'g':'r'}">${normSpell(Test.picked)===q.a?'정답':'오답'}</span> &nbsp;<b>${esc(q.a)}</b></div>` : `<div style="margin-top:10px"><button class="btn" onclick="Test.submitSpell()">확인</button></div>`}`}
+      ${Test.submitted ? `<div style="margin-top:12px"><button class="btn" onclick="Test.next()">다음</button></div>` : ''}`;
+    if(q.t==='spell' && !Test.submitted){ const el=$('#spell'); el.focus(); el.addEventListener('keydown', e => { if(e.key==='Enter'){ e.stopPropagation(); Test.submitSpell(); } }); }
+    document.onkeydown = null; if(Test.submitted) setTimeout(()=>{ document.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); document.onkeydown=null; Test.next(); } }; }, 150);
+  },
+  pick(i){ if(Test.submitted) return; const q=Test.qs[Test.idx]; Test.picked = q.choices[i]; Test.submitted=true; Test.ans.push({w:q.w, ok: Test.picked===q.a, given:Test.picked}); Test.render(); },
+  submitSpell(){ if(Test.submitted) return; const q=Test.qs[Test.idx]; Test.picked = $('#spell').value; Test.submitted=true; Test.ans.push({w:q.w, ok: normSpell(Test.picked)===q.a, given:Test.picked}); Test.render(); },
+  next(){ Test.idx++; Test.picked=null; Test.submitted=false; Test.render(); },
+  async finish(){
+    const n = Test.ans.length, c = Test.ans.filter(a=>a.ok).length; const score = Math.round(c/n*100);
+    const wrong = Test.ans.filter(a=>!a.ok).map(a=>a.w);
+    Test.ans.forEach(a => { if(a.ok){ if(S.wrong[a.w]) S.wrong[a.w] = Math.max(0, S.wrong[a.w]-1); } else S.wrong[a.w] = (S.wrong[a.w]||0) + 1; });
+    const rec = {score, n, c, at:Date.now(), wrong};
+    if(Test.meta.kind === 'daily'){ const d = S.days[Test.meta.k]; d.test = rec; S.lastStudy = Test.meta.k; S.streak = calcStreak(); }
+    if(Test.meta.kind === 'assigned'){ await Store.set('tests', Test.meta.id, {results:{[USER.uid]: {...rec, name:USER.name, answers:Test.ans}}}, true); }
+    save();
+    await Store.set('events', Store.newId(), {uid:USER.uid, name:USER.name, kind:Test.meta.kind, title:Test.meta.title, score, n, c, at:Date.now()});
+    postDiscord(`📘 **${USER.name}** · ${Test.meta.title} · **${score}점** (${c}/${n})${wrong.length ? `\n틀린 단어: ${wrong.slice(0,10).join(', ')}${wrong.length>10?' …':''}` : ' · 전부 정답 🎉'}`);
+    app.innerHTML = `
+      <h1>${score}점</h1><p class="sub">${esc(Test.meta.title)} · ${c} / ${n}</p>
+      <div class="card">${wrong.length ? `<h3>틀린 단어 ${wrong.length}</h3><div class="list">${wrong.map(w=>`<div><b>${esc(w)}</b> <span class="muted">${esc(BYW[w].ko)}</span></div>`).join('')}</div>` : '<p>전부 맞았어요. 🎉</p>'}</div>
+      <div class="card">${wrong.length ? `<button class="btn secondary" onclick="Test.qs=buildQuestions(${JSON.stringify(wrong).replace(/"/g,'&quot;')},'mix',30,Date.now());Test.meta={kind:'retry',title:'틀린 단어 다시'};Test.begin()">틀린 단어만 다시</button><div style="height:8px"></div>` : ''}<button class="btn" onclick="route='home';render()">홈으로</button></div>`;
+  }
+};
+function calcStreak(){ let s=0; const t = todayKey(); let d = new Date(t+'T00:00:00');
+  for(let i=0;i<400;i++){ const k = todayKey(d); const day = S.days[k]; const w = dow(k);
+    if(w===0){ d.setDate(d.getDate()-1); continue; }
+    if(day && day.test){ s++; } else if(i===0){ /* 오늘은 아직 안 했을 수 있음 */ } else break;
+    d.setDate(d.getDate()-1); }
+  return s; }
+
+/* =====================================================================
+   홈 (학생)
+   ===================================================================== */
+async function Home(){
+  const t = todayKey(); const d = dow(t);
+  if(S.lo == null){
+    app.innerHTML = `<h1>안녕, ${esc(USER.name)}</h1><p class="sub">외울 때까지, 달달</p>
+      <div class="card"><h2>먼저 레벨 테스트</h2><p class="muted">내가 어디서부터 모르는지 찾아야 거기서부터 외울 수 있어요. 6분이면 됩니다.</p><button class="btn" onclick="route='place';Place.phase='intro';render()">레벨 테스트 시작</button></div>`;
+    return;
+  }
+  const gray = grayList();
+  if(!S.grayDone && gray.length){
+    app.innerHTML = `<h1>안녕, ${esc(USER.name)}</h1><p class="sub">레벨 ${S.cefr} · 출발점 ${S.lo}번째 단어</p>
+      <div class="card"><h2>경계 근처 확인</h2><p class="muted">레벨 테스트로 찾은 경계 근처의 단어 <b>${gray.length}개</b>를 하나씩 안다/모른다로 표시합니다. 아는 단어는 외울 목록에서 빠지니 정확하게 해 주세요. 나눠서 해도 됩니다.</p>
+      <button class="btn" onclick="route='gray';render()">확인 시작</button><div style="height:8px"></div><button class="btn plain" onclick="route='place';Place.phase='intro';render()">레벨 테스트 다시 보기 (${S.placements.length}/${PLACE_MAX})</button></div>`;
+    return;
+  }
+  const day = ensureDay(t); const wk = weekKeys(t); const prof = cefrProfile(); const wrongs = wrongList();
+  const assigned = (await Store.list('tests', ['assignedTo','array-contains',USER.uid])).filter(x => !(x.results||{})[USER.uid]);
+  const q = queue();
+  app.innerHTML = `
+    <div class="row between" style="margin-top:8px"><h1 style="margin:12px 0 0">${DOWK[d]}요일</h1><span class="pill b" style="margin-top:14px">${S.cefr} · ${S.streak}일 연속</span></div>
+    <p class="sub">${esc(USER.name)} · ${t}</p>
+    ${assigned.map(x => `<div class="card" style="border:2px solid var(--accent)"><div class="row between"><div><h3>${esc(x.title)}</h3><span class="small">${esc(x.createdByName||'')}님이 낸 시험 · ${x.type==='mcq'?'객관식':x.type==='spell'?'철자':'객관식+철자'} ${x.count}문제</span></div><button class="btn sm" onclick='Test.startAssigned(${JSON.stringify({id:x.id,title:x.title,words:x.words,type:x.type,count:x.count}).replace(/'/g,"&#39;")})'>시험 보기</button></div></div>`).join('')}
+    <div class="card">
+      ${day.kind==='rest' ? `<h2>오늘은 쉬는 날</h2><p class="muted">일요일은 쉽니다. 틀린 단어가 쌓였으면 가볍게 돌아보세요.</p>`
+      : day.kind==='review' ? `<h2>주간 복습</h2><p class="muted">이번 주에 외운 ${day.words.length}단어 중 30문제.</p>${day.test ? `<div class="row between"><span class="pill g">완료 · ${day.test.score}점</span><button class="btn sm secondary" onclick="Test.startDaily('${t}')">다시 보기</button></div>` : `<button class="btn" ${day.words.length?'':'disabled'} onclick="Test.startDaily('${t}')">복습 시험 시작</button>`}`
+      : `<h2>오늘의 ${day.words.length}단어</h2>
+         <div class="row" style="margin:6px 0 14px;flex-wrap:wrap;gap:6px">${day.words.slice(0,8).map(w=>`<span class="pill">${esc(w)}</span>`).join('')}${day.words.length>8?`<span class="pill">+${day.words.length-8}</span>`:''}</div>
+         ${!day.words.length ? '<p class="muted">외울 단어가 없습니다. 모든 단어를 끝냈어요.</p>' :
+         day.test ? `<div class="row between"><span class="pill g">시험 완료 · ${day.test.score}점</span><div class="row"><button class="btn sm plain" onclick="Study.start('${t}')">다시 외우기</button><button class="btn sm secondary" onclick="Test.startDaily('${t}')">재시험</button></div></div>`
+         : day.learned ? `<div class="row between"><span class="pill a">외우기 완료</span><div class="row"><button class="btn sm plain" onclick="Study.start('${t}')">다시 외우기</button><button class="btn sm" onclick="Test.startDaily('${t}')">시험 보기</button></div></div>`
+         : `<button class="btn" onclick="Study.start('${t}')">외우기 시작</button>`}`}
+    </div>
+    <div class="card tight"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">이번 주</h3><span class="small">월~금 ${S.settings.newPerDay}단어 · 토 복습</span></div>
+      <div class="week">${wk.map(k=>{ const x=S.days[k]; const w=dow(k); const cls = k===t?'today':''; const st = x&&x.test ? 'done' : (k<t && w!==0 ? 'miss':''); return `<div class="${cls} ${st}"><b>${DOWK[w]}</b>${w===0?'쉼': x&&x.test ? x.test.score+'점' : (k<t? '—' : (w===6?'복습':S.settings.newPerDay))}</div>`;}).join('')}</div></div>
+    <div class="card tight"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">내 어휘</h3><span class="small">남은 단어 ${q.length}</span></div>
+      <div class="cefr">${LEVELS.map(l=>{ const x=prof[l]; const pct = x.n? Math.round(x.k/x.n*100):0; return `<div><b>${pct}<span style="font-size:11px">%</span></b><span>${l}</span></div>`;}).join('')}</div>
+      <p class="tiny" style="margin:8px 0 0">등급별로 아는 단어 비율 · DET 어휘 기준 B2 ≈ 100~125점, C1 ≈ 130점 이상</p></div>
+    ${wrongs.length ? `<div class="card tight"><div class="row between"><div><h3 style="margin:0">틀린 단어 ${wrongs.length}</h3><span class="small">${wrongs.slice(0,5).join(', ')}${wrongs.length>5?' …':''}</span></div><button class="btn sm secondary" onclick="Test.startWrong()">다시 풀기</button></div></div>` : ''}`;
+}
+
+/* =====================================================================
+   단어장 / 설정 (학생)
+   ===================================================================== */
+function Words(){
+  const learned = learnedSet(); const lv = Words.lv || S.cefr || 'A1'; const qq = (Words.q||'').toLowerCase();
+  let list = WORDS.filter(w => qq ? (w.w.includes(qq) || w.ko.includes(qq)) : w.lv === lv);
+  if(list.length > 300) list = list.slice(0,300);
+  app.innerHTML = `<h1>단어장</h1><p class="sub">${WORDS.length}단어 · A1~C1</p>
+    <input class="field" placeholder="검색 (영어·한글)" value="${esc(Words.q||'')}" oninput="Words.q=this.value;Words()">
+    <div class="row" style="margin:10px 0"><div class="seg">${LEVELS.map(l=>`<button class="${l===lv&&!qq?'on':''}" onclick="Words.lv='${l}';Words.q='';Words()">${l}</button>`).join('')}</div>
+      <div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Words()">한글</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Words()">+영영</button></div></div>
+    <div class="card tight"><div class="list">${list.map(w=>{ const st = S.diag[w.w]==='O' ? 'g' : learned.has(w.w) ? ((S.wrong[w.w]||0)>0?'r':'b') : (S.lo!=null && w.i<S.lo ? 'g' : ''); return `<div class="row between"><div><b>${esc(w.w)}</b> <span class="tiny">${esc(w.pos)}</span><div class="muted" style="font-size:15px">${esc(w.ko)}</div>${S.settings.showEn?`<div class="small">${esc(w.en)}</div>`:''}</div><div style="text-align:right;flex-shrink:0">${st?`<span class="pill ${st}">${st==='g'?'앎':st==='b'?'학습':'오답'}</span>`:''}<br><button class="btn xs plain" style="margin-top:4px" onclick="Words.toggleKnown('${w.w}')">${S.diag[w.w]==='O'?'모름으로':'앎으로'}</button></div></div>`;}).join('')}</div>${list.length>=300?'<p class="small">300개까지만 표시</p>':''}</div>`;
+}
+Words.toggleKnown = w => { S.diag[w] = S.diag[w]==='O' ? 'X' : 'O'; save(); Words(); };
+
+function Settings(){
+  app.innerHTML = `<h1>설정</h1><p class="sub">${esc(USER.name)} · ${esc(USER.email)}</p>
+    <div class="card"><h3>하루 단어 수</h3><div class="row"><input class="field" type="number" min="10" max="60" value="${S.settings.newPerDay}" onchange="S.settings.newPerDay=Math.max(10,Math.min(60,+this.value||30));save();toast('저장')"><span class="small">기본 30</span></div>
+      <h3 style="margin-top:14px">뜻 표시</h3><div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Settings()">한글만</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Settings()">한글 + 영영</button></div></div>
+    <div class="card"><h3>레벨</h3><p class="muted">${S.lo!=null?`${S.cefr} · 출발점 ${S.lo}번째 · 테스트 ${S.placements.length}회`:'아직 없음'}</p><button class="btn secondary" onclick="route='place';Place.phase='intro';render()">레벨 테스트 ${S.placements.length?'다시 보기':'시작'}</button>
+      ${S.placements.length>=PLACE_MAX?`<div style="height:8px"></div><button class="btn plain" onclick="if(confirm('레벨 테스트 기록을 지우고 처음부터 다시 봅니다. 진도는 유지됩니다.')){S.placements=[];S.lo=null;S.hi=null;S.grayDone=false;save();route='place';Place.phase='intro';render();}">기록 지우고 처음부터</button>`:''}</div>
+    <div class="card"><h3>데이터</h3><button class="btn plain" onclick="Settings.exportJson()">내보내기 (JSON)</button><div style="height:8px"></div><button class="btn danger" onclick="Auth.signOut()">로그아웃</button></div>
+    <div class="footer">달달 v${VERSION} · 제작 Educclesia Group<br>단어 데이터: NGSL·NAWL 1.2 (Browne, Culligan &amp; Phillips, CC BY-SA 4.0) · CEFR 등급: Oxford 3000/5000 (가정용)</div>`;
+}
+Settings.exportJson = () => { const b = new Blob([JSON.stringify(S)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `daldal-${USER.name}-${todayKey()}.json`; a.click(); };
+
+/* =====================================================================
+   관리자 — 세 아이 현황, 시험 만들기, 결과
+   ===================================================================== */
+const Admin = {
+  tab:'kids', kids:[], tests:[], events:[],
+  async load(){
+    const users = await Store.list('users'); Admin.kids = [];
+    for(const u of users.filter(u => u.role === 'student')){ const p = Object.assign(blankStudent(), await Store.get('progress', u.id) || {}); Admin.kids.push({...u, p}); }
+    Admin.tests = (await Store.list('tests')).sort((a,b)=>b.at-a.at);
+    Admin.events = (await Store.list('events')).sort((a,b)=>b.at-a.at).slice(0,50);
+  },
+  async render(){
+    app.innerHTML = `<h1>관리</h1><p class="sub">${esc(USER.name)}</p><div class="seg" style="margin-bottom:14px"><button class="${Admin.tab==='kids'?'on':''}" onclick="Admin.tab='kids';Admin.render()">아이들</button><button class="${Admin.tab==='new'?'on':''}" onclick="Admin.tab='new';Admin.render()">시험 만들기</button><button class="${Admin.tab==='tests'?'on':''}" onclick="Admin.tab='tests';Admin.render()">결과</button></div><div id="adm"><p class="muted">불러오는 중…</p></div>`;
+    await Admin.load(); const el = $('#adm'); if(!el) return;
+    if(Admin.tab==='kids') el.innerHTML = Admin.kidsHtml();
+    if(Admin.tab==='new') el.innerHTML = Admin.newHtml();
+    if(Admin.tab==='tests') el.innerHTML = Admin.testsHtml();
+  },
+  kidsHtml(){
+    const t = todayKey(); const wk = weekKeys(t);
+    if(!Admin.kids.length) return '<div class="card"><p class="muted">아직 로그인한 학생이 없습니다.</p></div>';
+    return Admin.kids.map(k => { const p = k.p; const prof = (()=>{ const b={}; LEVELS.forEach(l=>b[l]={n:0,k:0}); const learned=new Set(); for(const d in p.days)(p.days[d].words||[]).forEach(w=>learned.add(w)); WORDS.forEach(w=>{const x=b[w.lv]; if(!x)return; x.n++; const known = p.diag[w.w]==='O' || (p.diag[w.w]!=='X' && p.lo!=null && w.i<p.lo) || (learned.has(w.w) && !(p.wrong[w.w]>0)); if(known) x.k++;}); return b; })();
+      const today = p.days[t]; const wrongN = Object.values(p.wrong||{}).filter(x=>x>0).length;
+      return `<div class="card"><div class="row between"><div><h2 style="margin:0">${esc(k.name)}</h2><span class="small">${esc(k.email)}</span></div><span class="pill ${today&&today.test?'g':(dow(t)===0?'':'r')}">${dow(t)===0?'일요일':today&&today.test?`오늘 ${today.test.score}점`:today&&today.learned?'외우는 중':'오늘 안 함'}</span></div>
+        <div class="stat" style="margin:12px 0"><div><b>${p.cefr||'—'}</b><span>레벨</span></div><div><b>${p.streak||0}</b><span>연속일</span></div><div><b>${wrongN}</b><span>틀린 단어</span></div></div>
+        <div class="week">${wk.map(d=>{ const x=p.days[d]; const w=dow(d); return `<div class="${d===t?'today':''} ${x&&x.test?'done':(d<t&&w!==0?'miss':'')}"><b>${DOWK[w]}</b>${w===0?'쉼':x&&x.test?x.test.score+'점':(d<t?'—':'')}</div>`;}).join('')}</div>
+        <div class="cefr" style="margin-top:10px">${LEVELS.map(l=>`<div><b>${prof[l].n?Math.round(prof[l].k/prof[l].n*100):0}<span style="font-size:11px">%</span></b><span>${l}</span></div>`).join('')}</div>
+        <p class="tiny" style="margin:8px 0 0">레벨 테스트 ${p.placements.length}회 · 출발점 ${p.lo!=null?p.lo:'—'} · 배운 단어 ${Object.values(p.days).reduce((a,d)=>a+(d.words||[]).length,0)}</p></div>`; }).join('');
+  },
+  newHtml(){
+    return `<div class="card"><h3>시험 만들기</h3>
+      <label class="lbl">제목</label><input id="t-title" class="field" placeholder="예: 이번 주 B2 단어 점검">
+      <label class="lbl">대상</label><div id="t-kids">${Admin.kids.map(k=>`<label class="row" style="padding:6px 0"><input type="checkbox" value="${k.id}" checked> ${esc(k.name)}</label>`).join('')||'<span class="small">학생 없음</span>'}</div>
+      <label class="lbl">형식</label><div class="seg" id="t-type"><button class="on" data-v="mcq">객관식</button><button data-v="spell">철자</button><button data-v="mix">섞어서</button></div>
+      <label class="lbl">단어 범위</label><div class="seg" id="t-src"><button class="on" data-v="learned">아이가 배운 단어</button><button data-v="level">등급 전체</button><button data-v="custom">직접 입력</button></div>
+      <div id="t-level" class="hidden" style="margin-top:8px"><div class="seg">${LEVELS.map((l,i)=>`<button class="${i===3?'on':''}" data-v="${l}">${l}</button>`).join('')}</div></div>
+      <div id="t-custom" class="hidden" style="margin-top:8px"><textarea id="t-words" class="field" placeholder="단어를 쉼표나 줄바꿈으로 구분해 입력"></textarea></div>
+      <label class="lbl">문제 수</label><input id="t-count" class="field" type="number" value="30" min="5" max="100">
+      <div style="height:14px"></div><button class="btn" onclick="Admin.create()">만들기</button></div>`;
+  },
+  async create(){
+    const title = $('#t-title').value.trim() || '시험'; const kids = [...document.querySelectorAll('#t-kids input:checked')].map(x=>x.value);
+    const type = $('#t-type .on').dataset.v; const src = $('#t-src .on').dataset.v; const count = Math.max(5, Math.min(100, +$('#t-count').value||30));
+    let words = [];
+    if(src==='custom') words = $('#t-words').value.split(/[,\n\s]+/).map(x=>x.trim().toLowerCase()).filter(x=>BYW[x]);
+    else if(src==='level'){ const lv = $('#t-level .on').dataset.v; words = WORDS.filter(w=>w.lv===lv).map(w=>w.w); }
+    else { const s = new Set(); Admin.kids.filter(k=>kids.includes(k.id)).forEach(k=>{ for(const d in k.p.days)(k.p.days[d].words||[]).forEach(w=>s.add(w)); }); words = [...s]; }
+    if(!words.length) return toast('단어가 없습니다'); if(!kids.length) return toast('대상을 고르세요');
+    words = shuffled(words).slice(0, Math.max(count, Math.min(words.length, count*3)));
+    const id = Store.newId();
+    await Store.set('tests', id, {title, type, count:Math.min(count, words.length), words, assignedTo:kids, createdBy:USER.uid, createdByName:USER.name, at:Date.now(), results:{}});
+    const link = location.origin + location.pathname + '#test=' + id;
+    Admin.tab='tests'; await Admin.render();
+    try{ await navigator.clipboard.writeText(link); toast('만들었습니다 · 링크 복사됨'); }catch(e){ toast('만들었습니다'); }
+    postDiscord(`📝 새 시험 **${title}** (${type==='mcq'?'객관식':type==='spell'?'철자':'섞어서'} ${Math.min(count,words.length)}문제)\n${link}`);
+  },
+  testsHtml(){
+    const names = {}; Admin.kids.forEach(k=>names[k.id]=k.name);
+    return `${Admin.tests.map(t=>{ const link = location.origin+location.pathname+'#test='+t.id; return `<div class="card tight"><div class="row between"><div><h3 style="margin:0">${esc(t.title)}</h3><span class="small">${new Date(t.at).toLocaleDateString('ko-KR')} · ${t.type==='mcq'?'객관식':t.type==='spell'?'철자':'섞어서'} ${t.count}문제 · ${esc(t.createdByName||'')}</span></div><button class="btn xs secondary" onclick="navigator.clipboard.writeText('${link}').then(()=>toast('링크 복사됨'))">링크</button></div>
+      <div class="list" style="margin-top:6px">${(t.assignedTo||[]).map(uid=>{ const r=(t.results||{})[uid]; return `<div class="row between"><span>${esc(names[uid]||uid)}</span>${r?`<span><span class="pill ${r.score>=80?'g':r.score>=60?'a':'r'}">${r.score}점</span> <span class="small">${r.c}/${r.n} · ${new Date(r.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>${r.wrong&&r.wrong.length?`<div class="tiny">틀림: ${r.wrong.join(', ')}</div>`:''}</span>`:'<span class="pill">아직</span>'}</div>`;}).join('')}</div></div>`;}).join('') || '<div class="card"><p class="muted">만든 시험이 없습니다.</p></div>'}
+      <div class="card tight"><h3>최근 활동</h3><div class="list">${Admin.events.map(e=>`<div class="row between"><span><b>${esc(e.name)}</b> <span class="muted">${esc(e.title)}</span></span><span class="small">${e.score}점 · ${new Date(e.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</span></div>`).join('')||'<span class="small">없음</span>'}</div></div>`;
+  }
+};
+document.addEventListener('click', e => { const b = e.target.closest('#t-type button, #t-src button, #t-level button'); if(!b) return; [...b.parentElement.children].forEach(x=>x.classList.toggle('on', x===b)); if(b.parentElement.id==='t-src'){ $('#t-level').classList.toggle('hidden', b.dataset.v!=='level'); $('#t-custom').classList.toggle('hidden', b.dataset.v!=='custom'); } });
+
+/* ---------- 로그인 화면 ---------- */
+function Login(){
+  if(USER && USER.role === 'none'){ app.innerHTML = `<div class="login"><div class="logo">달</div><h1>달달</h1><p class="sub">${esc(USER.email)} 계정은 등록되어 있지 않습니다.<br>아빠에게 말해 주세요.</p><button class="btn plain" onclick="Auth.signOut()">다른 계정으로</button></div>`; return; }
+  app.innerHTML = `<div class="login"><div class="logo">달</div><h1>달달</h1><p class="sub">외울 때까지, 달달</p>
+    ${Store.cloud ? `<button class="btn" onclick="Auth.signIn()">Google로 로그인</button>`
+    : `<div class="card" style="text-align:left"><p class="small">Firebase 설정이 없어 이 기기에만 저장합니다.</p><label class="lbl">이름</label><input id="ln" class="field" placeholder="이름"><div style="height:10px"></div><button class="btn" onclick="Auth.localSignIn($('#ln').value.trim()||'학생','student')">학생으로 시작</button><div style="height:8px"></div><button class="btn plain" onclick="Auth.localSignIn($('#ln').value.trim()||'관리자','admin')">관리자로 시작</button></div>`}
+    <div class="footer">제작 Educclesia Group</div></div>`;
+}
+
+/* ---------- 라우팅 ---------- */
+const NAVS = { student:[['home','홈','M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],['words','단어장','M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3zM4 4v16a3 3 0 0 1 3-3h12'],['settings','설정','M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7-3a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1z']],
+  admin:[['admin','관리','M3 3h18v18H3zM3 9h18M9 21V9'],['words','단어장','M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3zM4 4v16a3 3 0 0 1 3-3h12'],['asettings','설정','M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z']] };
+function renderNav(){
+  const nav = $('#nav'); if(!USER || USER.role==='none' || ['place','gray','study','test'].includes(route)){ nav.classList.add('hidden'); return; }
+  nav.classList.remove('hidden');
+  nav.innerHTML = NAVS[USER.role].map(([r,l,p])=>`<button class="${route===r?'on':''}" onclick="route='${r}';render()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="${p}"/></svg>${l}</button>`).join('');
+}
+async function render(){
+  window.scrollTo(0,0);
+  if(!USER || USER.role==='none'){ Login(); renderNav(); return; }
+  if(USER.role==='admin' && ['home','settings'].includes(route)) route = 'admin';
+  if(USER.role==='student' && route==='admin') route='home';
+  renderNav();
+  if(USER.role==='student'){
+    if(route==='home') await Home(); else if(route==='place') Place.render(); else if(route==='gray') Gray.render(); else if(route==='study') Study.render(); else if(route==='test') Test.render(); else if(route==='words') Words(); else if(route==='settings') Settings();
+  } else {
+    if(route==='admin') await Admin.render(); else if(route==='words'){ S = S || blankStudent(); Words(); } else if(route==='asettings') app.innerHTML = `<h1>설정</h1><p class="sub">${esc(USER.email)}</p><div class="card"><button class="btn danger" onclick="Auth.signOut()">로그아웃</button></div><div class="footer">달달 v${VERSION} · 제작 Educclesia Group</div>`;
+  }
+}
+async function openAssignedFromHash(){
+  const m = location.hash.match(/#test=([a-z0-9]+)/); if(!m || !USER || USER.role!=='student') return;
+  const t = await Store.get('tests', m[1]); if(!t) return toast('시험을 찾을 수 없어요');
+  if((t.results||{})[USER.uid]) return toast('이미 본 시험이에요');
+  history.replaceState(null,'',location.pathname); Test.startAssigned({id:m[1], ...t});
+}
+window.addEventListener('hashchange', openAssignedFromHash);
+
+/* ---------- 시작 ---------- */
+(async function main(){
+  app.innerHTML = '<p class="muted" style="margin-top:40vh;text-align:center">불러오는 중…</p>';
+  try{ await loadWords(); }catch(e){ app.innerHTML = `<div class="card" style="margin-top:30vh"><h3>단어 데이터를 불러오지 못했습니다</h3><p class="small">${esc(e.message)}</p></div>`; return; }
+  await Store.init(); await Auth.start();
+  const _r = render; window.render = async function(){ await _r(); };
+  setTimeout(openAssignedFromHash, 400);
+  if(location.search.includes('selftest=1')) runSelfTest();
+})();
+
+/* ---------- 내장 셀프테스트 ---------- */
+function runSelfTest(){
+  const out = []; const ck = (n, c) => out.push((c?'PASS ':'FAIL ') + n);
+  ck('단어 수 5000+', WORDS.length > 5000);
+  ck('모든 단어 한글 뜻', WORDS.every(w => w.ko && w.ko.length));
+  ck('모든 단어 영영 뜻', WORDS.every(w => w.en && w.en.length));
+  ck('등급 순서 단조', WORDS.every((w,i) => i===0 || LEVELS.indexOf(w.lv) >= LEVELS.indexOf(WORDS[i-1].lv)));
+  ck('가짜 단어가 실재어 아님', FAKES.every(f => !BYW[f]));
+  const items = buildPlacement(123, new Set()); ck('배치 110문항', items.length === PB_N*PB_PER + P_FAKE);
+  const honest = {}; items.forEach(it => honest[it.w] = it.kind==='r' && it.i < 2000);
+  const r1 = scorePlacement(items, honest); ck('정직한 학생 경계 ≈ 2000 (got '+r1.R+')', Math.abs(r1.R-2000) < 450);
+  const all = {}; items.forEach(it => all[it.w] = true); ck('전부 안다 → 무효', !scorePlacement(items, all).valid);
+  const liar = {}; items.forEach(it => liar[it.w] = it.kind==='f' ? (hash(it.w)%2===0) : it.i < 2000); const r3 = scorePlacement(items, liar); ck('가짜 절반 안다 → 보정 후 ±500 (got '+r3.R+')', Math.abs(r3.R-2000) < 500);
+  S = blankStudent(); USER = {uid:'t', name:'t', role:'student'}; S.lo = 1000; S.hi = 1400; S.grayDone = true;
+  const q = queue(); ck('큐가 lo부터', q[0] === 1000);
+  const d = ensureDay('2026-10-12'); ck('월요일 30단어', d.kind==='new' && d.words.length===30);
+  const qs = buildQuestions(d.words, 'mix', 30, 7); ck('시험 30문제 객관식/철자 반반', qs.length===30 && qs.filter(x=>x.t==='mcq').length===15);
+  ck('객관식 보기 4개·정답 포함', qs.filter(x=>x.t==='mcq').every(x => x.choices.length===4 && x.choices.includes(x.a)));
+  const sat = ensureDay('2026-10-17'); ck('토요일 주간 복습', sat.kind==='review' && sat.words.length===30);
+  ck('일요일 쉼', ensureDay('2026-10-18').kind==='rest');
+  const fails = out.filter(x=>x.startsWith('FAIL')).length; document.title = fails ? 'SELFTEST-FAIL' : 'SELFTEST-PASS';
+  app.innerHTML = `<h1>셀프테스트 ${fails?'실패':'통과'}</h1><pre style="font-size:13px;white-space:pre-wrap">${out.join('\n')}</pre>`;
+  S = null; USER = null;
+}
+</script>
+<script>
+// Firebase SDK는 CONFIG.firebase가 있을 때만 로드
+if(CONFIG.firebase){ ['firebase-app-compat','firebase-auth-compat','firebase-firestore-compat'].forEach(n => { document.write(`<script src="https://www.gstatic.com/firebasejs/10.14.1/${n}.js"><\/script>`); }); }
+</script>
+</body>
+</html>
