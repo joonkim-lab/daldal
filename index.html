@@ -5,20 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f6f1e7">
+<meta name="theme-color" content="#eef8f3">
 <title>달달</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d6b5a'/%3E%3Ctext x='32' y='42' font-size='28' text-anchor='middle' fill='white' font-family='-apple-system,sans-serif' font-weight='700'%3E영%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314a37c'/%3E%3Ctext x='32' y='42' font-size='28' text-anchor='middle' fill='white' font-family='-apple-system,sans-serif' font-weight='700'%3E영%3C/text%3E%3C/svg%3E">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --bg:#f6f1e7; --card:#fffdf8; --ink:#1f1b16; --ink2:#6f675c; --ink3:#a79d8f;
-  --line:rgba(60,40,10,.09); --accent:#1d6b5a; --accent-ink:#ffffff; --green:#2f8f5b; --red:#c9472f; --amber:#d9931c;
-  --r:18px; --r2:12px; --sh:0 1px 2px rgba(60,40,10,.05), 0 8px 24px rgba(60,40,10,.07);
+  --bg:#eef8f3; --card:#ffffff; --ink:#14231c; --ink2:#5d6f66; --ink3:#9aaba3;
+  --line:rgba(20,60,40,.09); --accent:#14a37c; --accent-ink:#ffffff; --tint:rgba(20,163,124,.12);
+  --green:#1f9d63; --red:#e0533d; --amber:#d9931c;
+  --r:18px; --r2:12px; --sh:0 1px 2px rgba(20,60,40,.05), 0 8px 24px rgba(20,60,40,.07);
 }
-@media (prefers-color-scheme: dark){ :root{ --bg:#17150f; --card:#221f18; --ink:#f3ede2; --ink2:#a89f90; --ink3:#6f675c; --line:rgba(255,240,210,.1); --accent:#4fb08f; --accent-ink:#0e1a15; --sh:none; } }
+:root[data-theme="lavender"]{
+  --bg:#f4f2fc; --ink:#1d1a2e; --ink2:#6b6684; --ink3:#a6a1bd;
+  --line:rgba(50,40,110,.09); --accent:#6c5ce7; --tint:rgba(108,92,231,.12);
+  --sh:0 1px 2px rgba(50,40,110,.05), 0 8px 24px rgba(50,40,110,.07);
+}
+:root[data-theme="coral"]{
+  --bg:#fff4ef; --ink:#2a1a14; --ink2:#7a6258; --ink3:#b8a39a;
+  --line:rgba(110,50,30,.09); --accent:#f0654a; --tint:rgba(240,101,74,.12);
+  --sh:0 1px 2px rgba(110,50,30,.05), 0 8px 24px rgba(110,50,30,.07);
+}
+:root[data-theme="sky"]{
+  --bg:#eef6fb; --ink:#132330; --ink2:#5a6f7d; --ink3:#9db0bd;
+  --line:rgba(20,60,90,.09); --accent:#1897c4; --tint:rgba(24,151,196,.12);
+  --sh:0 1px 2px rgba(20,60,90,.05), 0 8px 24px rgba(20,60,90,.07);
+}
+:root[data-theme="lemon"]{
+  --bg:#fffbe8; --ink:#2a2410; --ink2:#7a704f; --ink3:#b5ab88;
+  --line:rgba(100,80,10,.1); --accent:#f5c518; --accent-ink:#2a2410; --tint:rgba(245,197,24,.2);
+  --sh:0 1px 2px rgba(100,80,10,.05), 0 8px 24px rgba(100,80,10,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1714; --card:#18221e; --ink:#e9f3ee; --ink2:#9db0a7; --ink3:#5f7068; --line:rgba(220,255,240,.1); --accent:#3cc79c; --accent-ink:#06120d; --tint:rgba(60,199,156,.16); --sh:none; }
+  :root[data-theme="coral"]{ --bg:#1a1210; --card:#261a17; --ink:#fbeee9; --ink2:#c2a69c; --ink3:#7a625a; --line:rgba(255,230,220,.1); --accent:#ff8a72; --accent-ink:#1f0d08; --tint:rgba(255,138,114,.18); }
+  :root[data-theme="sky"]{ --bg:#0e161c; --card:#16212a; --ink:#e8f2f8; --ink2:#9fb4c2; --ink3:#5e7280; --line:rgba(220,240,255,.1); --accent:#4cbbe6; --accent-ink:#06131a; --tint:rgba(76,187,230,.18); }
+  :root[data-theme="lemon"]{ --bg:#17150b; --card:#221f12; --ink:#f8f3df; --ink2:#bdb48f; --ink3:#77704f; --line:rgba(255,245,200,.1); --accent:#f7d24a; --accent-ink:#1c1704; --tint:rgba(247,210,74,.18); }
+  :root[data-theme="lavender"]{ --bg:#13111d; --card:#1d1a2b; --ink:#eeebfa; --ink2:#a8a3c2; --ink3:#666180; --line:rgba(230,225,255,.1); --accent:#9b8ff5; --accent-ink:#110e22; --tint:rgba(155,143,245,.18); }
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+input[type=checkbox]{accent-color:var(--accent)}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
 body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
@@ -40,16 +68,16 @@ h3{font-size:17px;font-weight:600;margin:0 0 6px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;font-weight:600;font-size:17px;background:var(--accent);color:var(--accent-ink);width:100%;transition:transform .08s,opacity .2s}
 .btn:active{transform:scale(.98)}
 .btn[disabled]{opacity:.4;pointer-events:none}
-.btn.secondary{background:rgba(29,107,90,.12);color:var(--accent)}
+.btn.secondary{background:var(--tint);color:var(--accent)}
 .btn.plain{background:var(--bg);color:var(--ink)}
-.btn.danger{background:rgba(201,71,47,.1);color:var(--red)}
+.btn.danger{background:rgba(224,83,61,.1);color:var(--red)}
 .btn.sm{padding:9px 14px;font-size:15px;width:auto;border-radius:11px}
 .btn.xs{padding:6px 10px;font-size:13px;width:auto;border-radius:9px}
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg);color:var(--ink2)}
-.pill.b{background:rgba(29,107,90,.13);color:var(--accent)}
-.pill.g{background:rgba(47,143,91,.14);color:#2a7a4f}
-.pill.r{background:rgba(201,71,47,.12);color:var(--red)}
-.pill.a{background:rgba(217,147,28,.16);color:#9a6208}
+.pill.b{background:var(--tint);color:var(--accent)}
+.pill.g{background:rgba(31,157,99,.14);color:#178a55}
+.pill.r{background:rgba(224,83,61,.12);color:var(--red)}
+.pill.a{background:rgba(230,160,30,.16);color:#9a6208}
 .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat>div{background:var(--bg);border-radius:var(--r2);padding:12px 10px;text-align:center}
 .stat b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
@@ -58,7 +86,12 @@ h3{font-size:17px;font-weight:600;margin:0 0 6px}
 .bar>i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s}
 .seg{display:inline-flex;background:var(--bg);border-radius:10px;padding:3px}
 .seg button{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2)}
-.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(60,40,10,.12)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatches button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--ink2);padding:6px 4px;border-radius:12px;min-width:52px}
+.swatches i{width:30px;height:30px;border-radius:50%;display:block;border:3px solid transparent}
+.swatches button.on{color:var(--ink);font-weight:600}
+.swatches button.on i{border-color:var(--card);box-shadow:0 0 0 2px var(--accent)}
 .seg.vx button{padding:4px 11px;font-size:15px}
 .seg.vx button.ok{color:var(--green)}
 .seg.vx button.bad{color:var(--red)}
@@ -69,15 +102,15 @@ input.field,select.field,textarea.field{width:100%;padding:12px 14px;border-radi
 input.field:focus{border-color:var(--accent)}
 textarea.field{min-height:90px;resize:vertical}
 label.lbl{display:block;font-size:13px;color:var(--ink2);margin:10px 0 6px;font-weight:600}
-nav.tab{position:fixed;left:0;right:0;bottom:0;background:rgba(255,253,248,.88);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:10}
-@media (prefers-color-scheme: dark){ nav.tab{background:rgba(34,31,24,.88)} }
+nav.tab{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb, var(--card) 88%, transparent);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:10}
+
 nav.tab button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--ink3);padding:4px 14px;font-weight:500}
 nav.tab button.on{color:var(--accent)}
 nav.tab svg{width:26px;height:26px}
 .hidden{display:none!important}
 /* 학습 카드 */
 .wcard{background:var(--card);border-radius:24px;padding:40px 24px 28px;box-shadow:var(--sh);text-align:center;min-height:300px;display:flex;flex-direction:column;justify-content:center;position:relative}
-.wcard .word{font-size:40px;font-weight:700;letter-spacing:-.02em;word-break:break-word;font-family:"New York","Iowan Old Style","Palatino",Georgia,serif}
+.wcard .word{font-size:40px;font-weight:700;letter-spacing:-.02em;word-break:break-word}
 .wcard .pos{font-size:13px;color:var(--ink3);margin-top:2px}
 .wcard .ko{font-size:24px;font-weight:600;margin-top:18px}
 .wcard .en{font-size:15px;color:var(--ink2);margin-top:10px;line-height:1.45}
@@ -89,8 +122,8 @@ nav.tab svg{width:26px;height:26px}
 .choices button.bad{border-color:var(--red)}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .pair .btn{padding:18px}
-.pair .no{background:rgba(201,71,47,.1);color:var(--red)}
-.pair .yes{background:rgba(47,143,91,.14);color:#2a7a4f}
+.pair .no{background:rgba(224,83,61,.1);color:var(--red)}
+.pair .yes{background:rgba(31,157,99,.14);color:#178a55}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:30;padding:0}
@@ -98,16 +131,16 @@ nav.tab svg{width:26px;height:26px}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .week>div{background:var(--bg);border-radius:12px;padding:10px 4px;text-align:center;font-size:12px;color:var(--ink2)}
 .week>div b{display:block;font-size:15px;color:var(--ink);margin-bottom:2px}
-.week>div.done{background:rgba(47,143,91,.14);color:#2a7a4f}
-.week>div.done b{color:#2a7a4f}
+.week>div.done{background:rgba(31,157,99,.14);color:#178a55}
+.week>div.done b{color:#178a55}
 .week>div.today{outline:2px solid var(--accent)}
-.week>div.miss{background:rgba(201,71,47,.08);color:var(--red)}
+.week>div.miss{background:rgba(224,83,61,.08);color:var(--red)}
 .cefr{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .cefr>div{background:var(--bg);border-radius:12px;padding:10px 4px;text-align:center}
 .cefr b{display:block;font-size:18px}
 .cefr span{font-size:11px;color:var(--ink2)}
 .login{min-height:80vh;display:flex;flex-direction:column;justify-content:center;text-align:center}
-.logo{width:88px;height:88px;border-radius:22px;background:var(--accent);color:#fff;font-size:44px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 10px 30px rgba(29,107,90,.35)}
+.logo{width:88px;height:88px;border-radius:22px;background:var(--accent);color:#fff;font-size:44px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 10px 30px var(--tint)}
 kbd{font-family:inherit;background:var(--bg);padding:1px 6px;border-radius:6px;font-size:13px}
 .footer{text-align:center;font-size:12px;color:var(--ink3);padding:24px 0 8px}
 </style>
@@ -239,10 +272,13 @@ function blankStudent(){
   return { v:1, diag:{}, placements:[], lo:null, hi:null, grayDone:false, cursor:0,
     days:{}, wrong:{}, settings:{showEn:true, newPerDay:CONFIG.newPerDay}, streak:0, lastStudy:null, cefr:null };
 }
+const THEMES = [['mint','민트','#14a37c'],['coral','코랄','#f0654a'],['lavender','라벤더','#6c5ce7'],['sky','하늘','#1897c4'],['lemon','레몬','#f5c518']];
+function applyTheme(){ const t = (S && S.settings && S.settings.theme) || 'mint'; document.documentElement.dataset.theme = t; }
 async function loadStudent(){
   if(!USER || USER.role !== 'student'){ S = null; return; }
   S = Object.assign(blankStudent(), await Store.get('progress', USER.uid) || {});
   S.settings = Object.assign({showEn:true, newPerDay:CONFIG.newPerDay}, S.settings||{});
+  applyTheme();
 }
 let saveT = null;
 function save(){ if(!S) return; clearTimeout(saveT); saveT = setTimeout(()=>{ if(S && USER) Store.set('progress', USER.uid, S); }, 300); }
@@ -579,6 +615,7 @@ function Settings(){
   app.innerHTML = `<h1>설정</h1><p class="sub">${esc(USER.name)} · ${esc(USER.email)}</p>
     <div class="card"><h3>하루 단어 수</h3><div class="row"><input class="field" type="number" min="10" max="60" value="${S.settings.newPerDay}" onchange="S.settings.newPerDay=Math.max(10,Math.min(60,+this.value||30));save();toast('저장')"><span class="small">기본 20</span></div>
       <label class="row" style="margin-top:10px;font-size:15px"><input type="checkbox" ${S.settings.auto!==false?'checked':''} onchange="S.settings.auto=this.checked;save()"> 자동 조절 (3일 연속 90점 이상이면 +5, 70점 미만이면 −5, 범위 15~40)</label>
+      <h3 style="margin-top:14px">색</h3><div class="swatches">${THEMES.map(([k,n,c])=>`<button class="${(S.settings.theme||'mint')===k?'on':''}" onclick="S.settings.theme='${k}';applyTheme();save();Settings()"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
       <h3 style="margin-top:14px">뜻 표시</h3><div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Settings()">한글만</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Settings()">한글 + 영영</button></div></div>
     <div class="card"><h3>레벨</h3><p class="muted">${S.lo!=null?`${S.cefr} · 출발점 ${S.lo}번째 · 테스트 ${S.placements.length}회`:'아직 없음'}</p><button class="btn secondary" onclick="route='place';Place.phase='intro';render()">레벨 테스트 ${S.placements.length?'다시 보기':'시작'}</button>
       ${S.placements.length>=PLACE_MAX?`<div style="height:8px"></div><button class="btn plain" onclick="if(confirm('레벨 테스트 기록을 지우고 처음부터 다시 봅니다. 진도는 유지됩니다.')){S.placements=[];S.lo=null;S.hi=null;S.grayDone=false;save();route='place';Place.phase='intro';render();}">기록 지우고 처음부터</button>`:''}</div>
