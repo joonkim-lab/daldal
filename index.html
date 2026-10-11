@@ -119,6 +119,7 @@ nav.tab svg{width:26px;height:26px}
 .wcard .en{font-size:15px;color:var(--ink2);margin-top:10px;line-height:1.45}
 .wcard .lv{position:absolute;top:14px;left:16px}
 .wcard .idx{position:absolute;top:14px;right:16px;font-size:13px;color:var(--ink3)}
+.wcard .idx.pill.a{color:#a86a00;font-size:12px}
 .choices{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .choices button{background:var(--card);border-radius:14px;padding:14px 16px;text-align:left;font-size:17px;box-shadow:var(--sh);border:2px solid transparent}
 .choices button.ok{border-color:var(--green)}
@@ -471,6 +472,21 @@ function ensureDay(k){
   if(day.kind === 'review'){ const wk = weekKeys(k).slice(0,5); const pool = []; wk.forEach(x => { const d2=S.days[x]; if(d2 && d2.kind==='new' && d2.test) pool.push(...d2.words); }); day.words = pool; }
   S.days[k] = day; save(); return day;
 }
+// 간격 반복 복습: 1·3·7·14·30일 전에 시험까지 본 단어에서 최대 10개 + 모자라면 틀린 단어로 채움
+const REVIEW_N = 10, REVIEW_GAPS = [[1,1],[3,2,4],[7,5,9],[14,11,17],[30,25,35]];
+function reviewWords(k, exclude){
+  const t = dayNum(k), ex = new Set(exclude||[]), byGap = [];
+  for(const g of REVIEW_GAPS){
+    const lo = g.length > 2 ? g[1] : g[0], hi = g.length > 2 ? g[2] : g[0], pool = [];
+    for(const k2 in S.days){ const d2 = S.days[k2]; const gap = t - dayNum(k2);
+      if(d2.kind==='new' && d2.test && gap >= lo && gap <= hi) d2.words.forEach(w => { if(!ex.has(w)) pool.push(w); }); }
+    byGap.push(shuffled(pool, mulberry32(hash(k + g[0]))));
+  }
+  const out = []; let i = 0;
+  while(out.length < REVIEW_N && byGap.some(p => p.length)){ const p = byGap[i++ % byGap.length]; const w = p.shift(); if(w && !out.includes(w)) out.push(w); }
+  for(const w of wrongList()){ if(out.length >= REVIEW_N) break; if(!ex.has(w) && !out.includes(w)) out.push(w); }
+  return out;
+}
 function wrongList(){ return Object.keys(S.wrong).filter(w => S.wrong[w] > 0).sort((a,b) => S.wrong[b]-S.wrong[a]); }
 
 const Study = {
@@ -481,7 +497,7 @@ const Study = {
     if(!w){ // 라운드 끝
       if(Study.again.length){ Study.cards = Study.again; Study.again=[]; Study.idx=0; Study.round++; return Study.render(); }
       d.learned = true; save();
-      app.innerHTML = `<h1>다 외웠어요</h1><p class="sub">${d.words.length}단어 · ${Study.round}바퀴</p><div class="card"><p class="muted">이제 시험으로 확인합니다. 객관식과 철자 반반.</p><button class="btn" onclick="Test.startDaily('${Study.k}')">시험 보기</button><div style="height:8px"></div><button class="btn plain" onclick="Study.start('${Study.k}')">한 번 더 외우기</button></div>`;
+      app.innerHTML = `<h1>다 외웠어요</h1><p class="sub">${d.words.length}단어 · ${Study.round}바퀴</p><div class="card"><p class="muted">이제 시험으로 확인합니다. 오늘 단어에 지난 단어 복습이 섞여 나와요. 객관식과 철자 반반.</p><button class="btn" onclick="Test.startDaily('${Study.k}')">시험 보기</button><div style="height:8px"></div><button class="btn plain" onclick="Study.start('${Study.k}')">한 번 더 외우기</button></div>`;
       return;
     }
     const showEn = S.settings.showEn;
@@ -521,7 +537,16 @@ function normSpell(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,
 
 const Test = {
   qs:[], idx:0, ans:[], meta:null, picked:null, submitted:false,
-  startDaily(k){ const d = S.days[k]; const n = Math.min(CONFIG.testPerDay, d.words.length); Test.meta = {kind:'daily', k, title: dow(k)===6 ? '주간 복습 시험' : '오늘의 시험'}; Test.qs = buildQuestions(d.words, 'mix', n, hash(USER.uid+k+Date.now())); Test.begin(); },
+  startDaily(k){ const d = S.days[k]; const seed = hash(USER.uid+k+Date.now());
+    Test.meta = {kind:'daily', k, title: dow(k)===6 ? '주간 복습 시험' : '오늘의 시험'};
+    if(d.kind === 'review'){ Test.qs = buildQuestions(d.words, 'mix', Math.min(CONFIG.testPerDay, d.words.length), seed); }
+    else {
+      const rev = reviewWords(k, d.words);
+      const qn = buildQuestions(d.words, 'mix', d.words.length, seed);
+      const qr = buildQuestions(rev, 'mix', rev.length, seed+1).map(q => (q.rev = true, q));
+      Test.qs = shuffled(qn.concat(qr), mulberry32(seed+2));
+    }
+    Test.begin(); },
   startWrong(){ const ws = wrongList().slice(0, 30); Test.meta = {kind:'wrong', title:'오답 다시 풀기'}; Test.qs = buildQuestions(ws, 'mix', 30, Date.now()); Test.begin(); },
   startAssigned(t){ Test.meta = {kind:'assigned', id:t.id, title:t.title}; Test.qs = buildQuestions(t.words, t.type, t.count, hash(USER.uid + t.id)); Test.begin(); },
   begin(){ Test.idx=0; Test.ans=[]; Test.picked=null; Test.submitted=false; route='test'; render(); },
@@ -532,10 +557,10 @@ const Test = {
       <div class="row between" style="margin-top:14px"><span class="small">${esc(Test.meta.title)} · ${Test.idx+1} / ${Test.qs.length}</span>${Test.meta.kind!=='assigned' ? `<button class="btn xs plain" onclick="route='home';render()">그만두기</button>`:''}</div>
       <div class="bar" style="margin:10px 0 18px"><i style="width:${Test.idx/Test.qs.length*100}%"></i></div>
       ${q.t === 'mcq' ? `
-        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span><div class="word">${esc(w.w)}</div><div class="pos">${esc(w.pos)}</div></div>
+        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span>${q.rev?'<span class="idx pill a">복습</span>':''}<div class="word">${esc(w.w)}</div><div class="pos">${esc(w.pos)}</div></div>
         <div class="choices">${q.choices.map((c,i)=>`<button ${Test.submitted?'disabled':''} class="${Test.submitted ? (c===q.a?'ok': (Test.picked===c?'bad':'')) : ''}" onclick="Test.pick(${i})">${esc(c)}</button>`).join('')}</div>`
       : `
-        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span><div class="ko" style="margin-top:0">${esc(w.ko)}</div>${S.settings.showEn ? `<div class="en">${esc(w.en)}</div>`:''}<div class="pos" style="margin-top:8px">${esc(w.pos)} · 영어 단어를 쓰세요</div></div>
+        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span>${q.rev?'<span class="idx pill a">복습</span>':''}<div class="ko" style="margin-top:0">${esc(w.ko)}</div>${S.settings.showEn ? `<div class="en">${esc(w.en)}</div>`:''}<div class="pos" style="margin-top:8px">${esc(w.pos)} · 영어 단어를 쓰세요</div></div>
         <div style="margin-top:14px"><input id="spell" class="field" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="spelling" ${Test.submitted?'disabled':''} value="${Test.submitted?esc(Test.picked):''}"></div>
         ${Test.submitted ? `<div class="card tight" style="margin-top:10px"><span class="pill ${normSpell(Test.picked)===q.a?'g':'r'}">${normSpell(Test.picked)===q.a?'정답':'오답'}</span> &nbsp;<b>${esc(q.a)}</b></div>` : `<div style="margin-top:10px"><button class="btn" onclick="Test.submitSpell()">확인</button></div>`}`}
       ${Test.submitted ? `<div style="margin-top:12px"><button class="btn" onclick="Test.next()">다음</button></div>` : ''}`;
@@ -607,7 +632,7 @@ async function Home(){
     <div class="card">
       ${day.kind==='rest' ? `<h2>오늘은 쉬는 날</h2><p class="muted">일요일은 쉽니다. 틀린 단어가 쌓였으면 가볍게 돌아보세요.</p>`
       : day.kind==='review' ? `<h2>주간 복습</h2><p class="muted">이번 주에 외운 ${day.words.length}단어 중 30문제.</p>${day.test ? `<div class="row between"><span class="pill g">완료 · ${day.test.score}점</span><button class="btn sm secondary" onclick="Test.startDaily('${t}')">다시 보기</button></div>` : `<button class="btn" ${day.words.length?'':'disabled'} onclick="Test.startDaily('${t}')">복습 시험 시작</button>`}`
-      : `<h2>오늘의 ${day.words.length}단어</h2>
+      : `<h2>오늘의 ${day.words.length}단어</h2>${(()=>{ const r = reviewWords(t, day.words).length; return r ? `<p class="small" style="margin:-4px 0 6px">시험: 새 단어 ${day.words.length} + 지난 단어 복습 ${r}</p>` : ''; })()}
          <div class="row" style="margin:6px 0 14px;flex-wrap:wrap;gap:6px">${day.words.slice(0,8).map(w=>`<span class="pill">${esc(w)}</span>`).join('')}${day.words.length>8?`<span class="pill">+${day.words.length-8}</span>`:''}</div>
          ${!day.words.length ? '<p class="muted">외울 단어가 없습니다. 모든 단어를 끝냈어요.</p>' :
          day.test ? `<div class="row between"><span class="pill g">시험 완료 · ${day.test.score}점</span><div class="row"><button class="btn sm plain" onclick="Study.start('${t}')">다시 외우기</button><button class="btn sm secondary" onclick="Test.startDaily('${t}')">재시험</button></div></div>`
@@ -781,6 +806,7 @@ function runSelfTest(){
   ck('객관식 보기 4개·정답 포함', qs.filter(x=>x.t==='mcq').every(x => x.choices.length===4 && x.choices.includes(x.a)));
   const sat = ensureDay('2026-10-17'); ck('토요일 주간 복습', sat.kind==='review');
   ck('일요일 쉼', ensureDay('2026-10-18').kind==='rest');
+  S.days['2026-10-12'].test = {score:90}; const r7 = reviewWords('2026-10-19', []); ck('7일 뒤 복습 단어 10개 (지난 월요일 것)', r7.length===10 && r7.every(w => S.days['2026-10-12'].words.includes(w)));
   const fails = out.filter(x=>x.startsWith('FAIL')).length; document.title = fails ? 'SELFTEST-FAIL' : 'SELFTEST-PASS';
   app.innerHTML = `<h1>셀프테스트 ${fails?'실패':'통과'}</h1><pre style="font-size:13px;white-space:pre-wrap">${out.join('\n')}</pre>`;
   S = null; USER = null;

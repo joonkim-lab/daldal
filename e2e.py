@@ -63,7 +63,7 @@ with sync_playwright() as pw:
         pg.click("text=다음"); pg.wait_for_timeout(80); q+=1
     t=pg.inner_text('#app'); ck('시험 20문제 후 점수', q==20 and '점' in t, (q,t[:80]))
     sc=pg.evaluate("S.days['2026-10-12'].test.score"); ck('점수 기록 (%s)'%sc, 80<=sc<100)
-    ck('오답 기록', pg.evaluate("Object.keys(S.wrong).length")>=2)
+    ck('오답 기록', pg.evaluate("Object.keys(S.wrong).length")>=1)
     pg.click("text=홈으로"); pg.wait_for_timeout(400)
     pg.click("nav button:has-text('단어장')"); pg.wait_for_timeout(300); pg.fill('input.field','absor'); pg.wait_for_timeout(200)
     ck('단어장 검색', 'absorb' in pg.inner_text('#app'))

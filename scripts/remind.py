@@ -93,13 +93,28 @@ for k in kids:
     if n >= 3:
         tag = f'{k["id"]}:done'
         if tag not in place_sent:
-            say(pick(LT.get('완료') or ['{멘션} 레벨 테스트 3번 끝! 출발점은 **{레벨}**.'], k['name'], 레벨=k['p'].get('cefr') or '?')); place_sent.add(tag)
+            say(pick(LT.get('완료') or ['{멘션} 레벨 테스트 3번 끝!'], k['name'])); place_sent.add(tag)
         continue
     lastp = pl[-1]
     if lastp.get('valid') and nowms >= int(lastp.get('at') or 0) + GAP:
         tag = f'{k["id"]}:{n + 1}'
         if tag not in place_sent:
             say(pick(LT.get('열림') or ['{멘션} 레벨 테스트 {회차}회차가 열렸어!'], k['name'], 회차=n + 1)); place_sent.add(tag)
+
+# 1-3. 레벨 테스트 독촉 (회차가 열려 있는 아이, 정해진 시각, 일요일 포함). 시작 48시간 넘으면 더 세게
+LD = LT.get('독촉') or {}
+for t_str in LD.get('시각', []):
+    hh, mm = map(int, t_str.split(':')); t0 = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    tag = f'place@{t_str}'
+    if not (t0 <= now < t0 + datetime.timedelta(minutes=60)) or tag in sent_today: continue
+    for k in kids:
+        pl = k['p'].get('placements') or []; valid = [x for x in pl if x.get('valid')]; n = len(valid)
+        if n >= 3: continue
+        if pl and pl[-1].get('valid') and nowms < int(pl[-1].get('at') or 0) + GAP: continue   # 아직 잠김
+        first = int(pl[0].get('at') or 0) if pl else 0
+        late = first and nowms - first > 48 * 3600 * 1000
+        say(pick(LD.get('이틀 지남') if late else LD.get('문구'), k['name'], 회차=n + 1, 남은=3 - n))
+    sent_today.add(tag)
 
 # 2. 독촉 (일요일 제외, 시각이 지났고 1시간 안이며 오늘 아직 안 보낸 것)
 if dow != 0:
@@ -119,7 +134,9 @@ if MODE == 'daily' and (dow != 0 or os.environ.get('FORCE')):
     for k in kids:
         t = k['day'].get('test') or {}
         nv = len([x for x in (k['p'].get('placements') or []) if x.get('valid')])
-        detail = {'레벨 전': f'레벨 테스트 {nv}/3', '외우기만': '외우기는 했는데 시험을 아직 안 봤어요', '안 함': '오늘 공부 안 함',
+        pl0 = (k['p'].get('placements') or [{}])[0].get('at') if k['p'].get('placements') else 0
+        late = ' ⚠️ 시작한 지 이틀 넘음' if pl0 and int(time.time()*1000) - int(pl0) > 48*3600*1000 else ''
+        detail = {'레벨 전': f'레벨 테스트 {nv}/3' + late, '외우기만': '외우기는 했는데 시험을 아직 안 봤어요', '안 함': '오늘 공부 안 함',
                   '함': f'{t.get("score")}점 ({t.get("c")}/{t.get("n")}) · {k["p"].get("streak", 0)}일 연속'}[k['state']]
         lines.append(f'{icon[k["state"]]} **{k["name"]}** — {detail}')
     say(f'📒 **달달 {today.month}/{today.day} ({"일월화수목금토"[dow]})**\n' + ('\n'.join(lines) or '아직 로그인한 아이가 없어요'))
