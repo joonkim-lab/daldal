@@ -4,7 +4,7 @@
 - 매일 21:30 오늘 현황 요약 (월~토)
 봇 계정(이메일/비밀번호)으로 로그인해 Firestore REST로 읽는다.
 secrets: BOT_EMAIL, BOT_PASSWORD, DISCORD_WEBHOOK"""
-import os, json, datetime, urllib.request, time, random, pathlib
+import os, json, datetime, urllib.request, urllib.error, time, random, pathlib
 
 API_KEY = 'AIzaSyAAfmby4xi5AeCFyOE8UIhDJoNXT6MZmp0'
 PROJECT = 'daldal-a4dcc'
@@ -19,8 +19,11 @@ def http(url, data=None, token=None, method=None):
     h = {'Content-Type': 'application/json', 'User-Agent': 'daldal-remind'}
     if token: h['Authorization'] = 'Bearer ' + token
     req = urllib.request.Request(url, data=json.dumps(data).encode() if data is not None else None, headers=h, method=method)
-    with urllib.request.urlopen(req) as r:
-        b = r.read(); return json.loads(b) if b else {}
+    try:
+        with urllib.request.urlopen(req) as r:
+            b = r.read(); return json.loads(b) if b else {}
+    except urllib.error.HTTPError as e:
+        print('HTTP', e.code, url.split('?')[0], e.read().decode('utf-8', 'replace')[:500]); raise
 def val(v):
     if 'mapValue' in v: return {k: val(x) for k, x in v['mapValue'].get('fields', {}).items()}
     if 'arrayValue' in v: return [val(x) for x in v['arrayValue'].get('values', [])]
