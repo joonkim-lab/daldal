@@ -90,6 +90,15 @@ h3{font-size:17px;font-weight:600;margin:0 0 6px}
 .guide{margin:6px 0 0;padding-left:20px;font-size:15px;line-height:1.55}
 .guide li{margin:6px 0}
 .guide b{color:var(--ink)}
+.report .big{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent)}
+.report .mid{font-size:28px;font-weight:700}
+.ctab{width:100%;border-collapse:collapse;font-size:14px}
+.ctab th{text-align:left;font-size:12px;color:var(--ink2);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line)}
+.ctab td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.ctab tr.me td{background:var(--tint)}
+.ctab td:first-child,.ctab th{white-space:nowrap}
+.mbar{height:5px;background:var(--bg);border-radius:9px;overflow:hidden;margin:4px 0 3px}
+.mbar i{display:block;height:100%;background:var(--accent)}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .swatches button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--ink2);padding:6px 4px;border-radius:12px;min-width:52px}
 .swatches i{width:30px;height:30px;border-radius:50%;display:block;border:3px solid transparent}
@@ -172,7 +181,7 @@ const CONFIG = {
   students: {               // 이메일: 표시 이름
     'creativemeriel@gmail.com': 'Meriel',
     'jasoncanada0506@gmail.com': 'Jason',
-    'elvinkim827@gmail.com': 'Elvin',
+    'kimelvin827@gmail.com': 'Elvin',
   },
   wordsUrl: 'words.json',
   newPerDay: 20,
@@ -181,7 +190,15 @@ const CONFIG = {
 };
 const VERSION = '1.0';
 const LEVELS = ['A1','A2','B1','B2','C1'];
-const DET = {A1:'10~20', A2:'25~55', B1:'60~95', B2:'100~125', C1:'130~150'};
+const DET = {A1:'55 이하', A2:'55 이하', B1:'60~95', B2:'100~125', C1:'130~150'};
+const DET_RANGE = {B1:[60,95], B2:[100,125], C1:[130,150]};
+const CEFR_DESC = [
+  ['A1','기초','인사·숫자·가족 같은 아주 기본 단어','55 이하'],
+  ['A2','초급','일상생활에서 자주 쓰는 단어','55 이하'],
+  ['B1','중급','학교생활·익숙한 주제의 글과 대화','60~95'],
+  ['B2','중상급','신문 기사·대학 수업 대부분 이해','100~125'],
+  ['C1','고급','전문적인 글도 자연스럽게 읽고 씀','130~150'],
+  ['C2','최상급','원어민에 가까운 수준 (이 앱 범위 밖)','155~160']];
 const PB_N = 20, PB_PER = 4, P_NAWL = 0, P_FAKE = 30;     // 배치 테스트: 20구간×4 + 가짜 30 = 110
 const GRAY_MIN = 250, GRAY_MAX = 900, FA_HARD = 0.40, FA_WARN = 0.25;
 const PLACE_MAX = 3;
@@ -326,6 +343,38 @@ function cefrProfile(){ // 등급별 '아는 단어' 비율 (진단 + 학습 완
   return b;
 }
 
+function knownIn(p, i){ const w = WORDS[i]; if(p.diag[w.w]==='O') return true; if(p.diag[w.w]==='X') return false; return p.lo!=null && i < p.lo; }
+function profOf(p){ const b = {}; LEVELS.forEach(l => b[l] = {n:0,k:0}); const learned = new Set();
+  for(const d in p.days){ const x = p.days[d]; if(x.kind==='new' && x.test) (x.words||[]).forEach(w => learned.add(w)); }
+  WORDS.forEach(w => { const x = b[w.lv]; if(!x) return; x.n++; if(knownIn(p, w.i) || (learned.has(w.w) && !((p.wrong||{})[w.w] > 0))) x.k++; }); return b; }
+function addWeekdays(n){ const d = new Date(); let left = n; while(left > 0){ d.setDate(d.getDate()+1); const w = d.getDay(); if(w!==0 && w!==6) left--; } return d; }
+function buildReport(p){
+  const ok = p.placements.filter(x=>x.valid).map(x=>x.R).sort((a,b)=>a-b); const R = ok[Math.floor((ok.length-1)/2)];
+  const lv = lvOf(Math.max(0, Math.min(WORDS.length-1, R))); const b = levelBounds()[lv]; const f = Math.max(0, Math.min(1, (R - b[0]) / (b[1] - b[0] + 1)));
+  let det = null; if(DET_RANGE[lv]){ const [a, z] = DET_RANGE[lv]; const e = Math.round((a + f*(z-a))/5)*5; det = [Math.max(10, e-10), Math.min(160, e+10), e]; }
+  const per = (p.settings && p.settings.newPerDay) || CONFIG.newPerDay; const bnd = levelBounds();
+  const goal = (label, det, endIdx) => { let n = 0; for(let i=0;i<=endIdx;i++) if(!knownIn(p,i)) n++; const days = Math.ceil(n/per); return {label, det, words:n, days, weeks: Math.ceil(days/5), date: n ? addWeekdays(days).toISOString().slice(0,10) : null}; };
+  const plan = [ goal('B2 끝까지', '약 120점', bnd.B2[1]), goal('C1 초반까지', '약 130점', bnd.C1[0] + Math.round((bnd.C1[1]-bnd.C1[0])/3)) ];
+  return {at: Date.now(), R, lv, f, det, per, plan, prof: profOf(p)};
+}
+function reportHtml(rep, name){
+  const fmt = d => { const x = new Date(d+'T00:00:00'); return `${x.getFullYear()}년 ${x.getMonth()+1}월 ${x.getDate()}일`; };
+  return `<div class="report">
+    <div class="small">${esc(name)}의 결과지 · ${new Date(rep.at).toLocaleDateString('ko-KR')}</div>
+    <div class="row between" style="align-items:flex-end;margin:6px 0 4px"><div><div class="small">지금 내 어휘 등급</div><div class="big">${rep.lv}</div></div>
+      <div style="text-align:right"><div class="small">어휘로 본 듀오링고 점수</div><div class="mid">${rep.det ? `${rep.det[0]}~${rep.det[1]}` : '55 이하'}<span class="small">점</span></div></div></div>
+    <h3 style="margin:18px 0 8px">CEFR 등급표</h3>
+    <table class="ctab"><tr><th>등급</th><th>뜻</th><th>DET</th><th>내가 아는 단어</th></tr>
+    ${CEFR_DESC.map(([l,k,d,det]) => { const x = rep.prof[l]; const pct = x ? Math.round(x.k/x.n*100) : null; const me = l===rep.lv;
+      return `<tr class="${me?'me':''}"><td><b>${l}</b><div class="tiny">${k}</div></td><td>${d}</td><td>${det}</td><td>${pct==null?'—':`<div class="mbar"><i style="width:${pct}%"></i></div>${pct}%`}${me?' <span class="pill b">지금</span>':''}</td></tr>`; }).join('')}
+    </table>
+    <h3 style="margin:18px 0 8px">앞으로의 계획 (하루 ${rep.per}단어, 월~금)</h3>
+    <table class="ctab"><tr><th>목표</th><th>남은 단어</th><th>걸리는 시간</th><th>예상</th></tr>
+    ${rep.plan.map(g => `<tr><td><b>${g.label}</b><div class="tiny">듀오링고 ${g.det}</div></td><td>${g.words.toLocaleString()}개</td><td>${g.words ? `${g.weeks}주` : '이미 도달'}</td><td>${g.date ? fmt(g.date) : '—'}</td></tr>`).join('')}
+    </table>
+    <p class="tiny" style="margin:12px 0 0">듀오링고 점수는 <b>단어 실력만</b> 보고 어림한 참고값이에요. 실제 시험은 읽기·듣기·말하기·쓰기를 모두 봐서 달라질 수 있어요. 등급별 점수는 듀오링고 공식 CEFR 대응표(B1 60~95, B2 100~125, C1 130~150) 기준이에요.</p>
+  </div>`;
+}
 /* =====================================================================
    레벨 테스트 — 110문항(실재어 80 + 가짜 30), 최대 3회, 중앙값으로 확정
    ===================================================================== */
@@ -397,8 +446,8 @@ const Place = {
   waitBox(){ const w = placeWait();
     return `<div class="card tight" style="background:var(--tint);box-shadow:none"><b>${validN()+1}회차는 ${fmtClock(nextAt())}부터</b> <span class="small">(${fmtWait(w)} 뒤)</span><p class="small" style="margin:6px 0 0">연달아 보면 그날 컨디션이 결과에 섞여요. 3시간 쉬고 다시 봐야 진짜 실력에 가까워져요. 열리면 디스코드로 알려 줄게요.</p></div>`; },
   history(){
-    return `<div class="card tight"><h3>지금까지</h3><div class="list">${S.placements.map((p,i)=>`<div class="row between"><span>${i+1}회 · ${new Date(p.at).toLocaleDateString('ko-KR')}</span><span>${p.valid ? `<span class="pill b">${lvOf(p.R)}</span> <span class="small">${p.R}번째 단어 부근</span>` : '<span class="pill r">무효 (가짜 단어 오답 과다)</span>'}</span></div>`).join('')}</div>
-    ${S.lo!=null ? `<p class="small" style="margin:10px 0 0">확정 출발점: <b>${lvOf(S.lo)}</b> ${S.lo}번째 단어 · 확인 구역 ${S.lo}~${S.hi}</p>` : ''}</div>`;
+    return `<div class="card tight"><h3>지금까지</h3><div class="list">${S.placements.map((p,i)=>`<div class="row between"><span>${i+1}회 · ${new Date(p.at).toLocaleDateString('ko-KR')}</span><span>${p.valid ? '<span class="pill g">완료</span>' : '<span class="pill r">무효 (가짜 단어 오답 과다)</span>'}</span></div>`).join('')}</div>
+</div>`;
   },
   begin(){
     const avoid = new Set(); S.placements.forEach(p => (p.items||[]).forEach(w => avoid.add(w)));
@@ -417,21 +466,25 @@ const Place = {
   answer(v){ const it = Place.items[Place.idx]; Place.ans[it.w] = v; Place.idx++; Place.render(); },
   finish(){
     const r = scorePlacement(Place.items, Place.ans); r.items = Place.items.map(x=>x.w); r.sec = Math.round((Date.now()-Place.t0)/1000);
-    S.placements.push(r); finalizePlacement(); save(); Place.phase = 'result'; Place.render();
+    S.placements.push(r); finalizePlacement();
+    if(placeDone() && !S.report){ S.report = buildReport(S); S.reportReleased = false;
+      Store.set('events', Store.newId(), {uid:USER.uid, name:USER.name, kind:'report', title:'레벨 테스트 결과지', at:Date.now()}); }
+    save(); Place.phase = 'result'; Place.render();
   },
   result(){
     const r = S.placements[S.placements.length-1];
     app.innerHTML = `
       <h1>${r.valid ? '결과' : '무효'}</h1>
       <div class="card">
-        ${r.valid ? `<div class="row between"><div><div class="small">내 레벨 (이번 회차)</div><div style="font-size:40px;font-weight:700;letter-spacing:-.02em">${lvOf(r.R)}</div><div class="small">DET 어휘 기준 약 ${DET[lvOf(r.R)]||''}점 구간</div></div><div style="text-align:right"><div class="small">경계</div><div style="font-size:22px;font-weight:600">${r.R}<span class="small">/${WORDS.length}</span></div></div></div>
+        ${r.valid ? `<div class="row between"><div><div class="small">레벨 테스트</div><div style="font-size:40px;font-weight:700;letter-spacing:-.02em">${validN()}<span style="font-size:22px;color:var(--ink2)"> / ${PLACE_MAX}회 완료</span></div></div></div>
+        <p class="small" style="margin:8px 0 0">${placeDone() ? '세 번의 결과를 모아 결과지를 만들었어요. 엄마·아빠가 먼저 확인하고 보내 줄 거예요.' : '결과는 3번을 다 본 뒤 결과지로 한꺼번에 알려 줄게요.'}</p>
         ${r.fa >= FA_WARN ? `<div class="pill a" style="margin-top:10px">가짜 단어를 ${Math.round(r.fa*100)}% '안다'고 했어요 — 실제보다 높게 나왔을 수 있어요</div>` : ''}`
         : `<p>가짜 단어의 ${Math.round(r.fa*100)}%를 '안다'고 눌렀습니다. 대충 누르면 결과를 쓸 수 없어요. 천천히 다시 봐 주세요.</p>`}
       </div>
       ${S.placements.length>1 ? Place.history() : ''}
       <div class="card">
         ${!r.valid ? `<button class="btn" onclick="Place.begin()">다시 보기</button>`
-          : placeDone() ? `<p class="small" style="margin:0 0 10px">레벨 테스트 3번을 모두 끝냈어요. 세 결과의 가운데 값으로 출발점을 정했어요.</p><button class="btn" onclick="route='home';render()">공부 시작하기</button>`
+          : placeDone() ? `<p class="small" style="margin:0 0 10px">결과지를 기다리는 동안 공부는 바로 시작해도 돼요.</p><button class="btn" onclick="route='home';render()">공부 시작하기</button>`
           : Place.waitBox()+`<div style="height:8px"></div><button class="btn plain" onclick="route='home';render()">홈으로</button>`}
       </div>`;
   }
@@ -604,6 +657,15 @@ function calcStreak(){ let s=0; const t = todayKey(); let d = new Date(t+'T00:00
 /* =====================================================================
    홈 (학생)
    ===================================================================== */
+async function checkRelease(){
+  if(!S || !S.report || S.reportReleased) return;
+  try{ const ev = await Store.list('events', ['uid','==',USER.uid]); if(ev.some(e => e.kind==='release')){ S.reportReleased = true; save(); } }catch(e){}
+}
+function reportCard(){
+  if(!S.report) return '';
+  if(!S.reportReleased) return `<div class="card tight"><div class="row between"><span>📄 레벨 테스트 결과지</span><span class="small">엄마·아빠가 확인 중</span></div></div>`;
+  return `<div class="card tight" style="${S.reportSeen?'':'border:2px solid var(--accent)'}"><div class="row between"><div><h3 style="margin:0">📄 내 결과지${S.reportSeen?'':' 도착!'}</h3><span class="small">등급 · 예상 점수 · 공부 계획</span></div><button class="btn sm" onclick="S.reportSeen=true;save();route='report';render()">보기</button></div></div>`;
+}
 async function Home(){
   const t = todayKey(); const d = dow(t);
   if(!placeDone()){
@@ -615,9 +677,11 @@ async function Home(){
         ${w ? Place.waitBox() : `<button class="btn" onclick="route='place';Place.phase='intro';render()">${n ? `${n+1}회차 시작` : '1회차 시작'}</button>`}</div>`;
     return;
   }
+  await checkRelease();
   const gray = grayList();
   if(!S.grayDone && gray.length){
-    app.innerHTML = `<h1>안녕, ${esc(USER.name)}</h1><p class="sub">레벨 ${S.cefr} · 출발점 ${S.lo}번째 단어</p>
+    app.innerHTML = `<h1>안녕, ${esc(USER.name)}</h1><p class="sub">외울 때까지, 달달</p>
+      ${reportCard()}
       <div class="card"><h2>경계 근처 확인</h2><p class="muted">레벨 테스트로 찾은 경계 근처의 단어 <b>${gray.length}개</b>를 하나씩 안다/모른다로 표시합니다. 아는 단어는 외울 목록에서 빠지니 정확하게 해 주세요. 나눠서 해도 됩니다.</p>
       <button class="btn" onclick="route='gray';render()">확인 시작</button></div>`;
     return;
@@ -626,8 +690,9 @@ async function Home(){
   const assigned = (await Store.list('tests', ['assignedTo','array-contains',USER.uid])).filter(x => !(x.results||{})[USER.uid]);
   const q = queue();
   app.innerHTML = `
-    <div class="row between" style="margin-top:8px"><h1 style="margin:12px 0 0">${DOWK[d]}요일</h1><span class="pill b" style="margin-top:14px">${S.cefr} · ${S.streak}일 연속</span></div>
+    <div class="row between" style="margin-top:8px"><h1 style="margin:12px 0 0">${DOWK[d]}요일</h1><span class="pill b" style="margin-top:14px">${S.reportReleased ? S.cefr+' · ' : ''}${S.streak}일 연속</span></div>
     <p class="sub">${esc(USER.name)} · ${t}</p>
+    ${reportCard()}
     ${assigned.map(x => `<div class="card" style="border:2px solid var(--accent)"><div class="row between"><div><h3>${esc(x.title)}</h3><span class="small">${esc(x.createdByName||'')}님이 낸 시험 · ${x.type==='mcq'?'객관식':x.type==='spell'?'철자':'객관식+철자'} ${x.count}문제</span></div><button class="btn sm" onclick='Test.startAssigned(${JSON.stringify({id:x.id,title:x.title,words:x.words,type:x.type,count:x.count}).replace(/'/g,"&#39;")})'>시험 보기</button></div></div>`).join('')}
     <div class="card">
       ${day.kind==='rest' ? `<h2>오늘은 쉬는 날</h2><p class="muted">일요일은 쉽니다. 틀린 단어가 쌓였으면 가볍게 돌아보세요.</p>`
@@ -641,9 +706,9 @@ async function Home(){
     </div>
     <div class="card tight"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">이번 주</h3><span class="small">월~금 ${S.settings.newPerDay}단어 · 토 복습</span></div>
       <div class="week">${wk.map(k=>{ const x=S.days[k]; const w=dow(k); const cls = k===t?'today':''; const st = x&&x.test ? 'done' : (k<t && w!==0 ? 'miss':''); return `<div class="${cls} ${st}"><b>${DOWK[w]}</b>${w===0?'쉼': x&&x.test ? x.test.score+'점' : (k<t? '—' : (w===6?'복습':S.settings.newPerDay))}</div>`;}).join('')}</div></div>
-    <div class="card tight"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">내 어휘</h3><span class="small">남은 단어 ${q.length}</span></div>
+    ${S.reportReleased ? `<div class="card tight"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">내 어휘</h3><span class="small">남은 단어 ${q.length}</span></div>
       <div class="cefr">${LEVELS.map(l=>{ const x=prof[l]; const pct = x.n? Math.round(x.k/x.n*100):0; return `<div><b>${pct}<span style="font-size:11px">%</span></b><span>${l}</span></div>`;}).join('')}</div>
-      <p class="tiny" style="margin:8px 0 0">등급별로 아는 단어 비율 · DET 어휘 기준 B2 ≈ 100~125점, C1 ≈ 130점 이상</p></div>
+      <p class="tiny" style="margin:8px 0 0">등급별로 아는 단어 비율 · DET 어휘 기준 B2 ≈ 100~125점, C1 ≈ 130점 이상</p></div>` : ''}
     ${wrongs.length ? `<div class="card tight"><div class="row between"><div><h3 style="margin:0">틀린 단어 ${wrongs.length}</h3><span class="small">${wrongs.slice(0,5).join(', ')}${wrongs.length>5?' …':''}</span></div><button class="btn sm secondary" onclick="Test.startWrong()">다시 풀기</button></div></div>` : ''}`;
 }
 
@@ -668,7 +733,7 @@ function Settings(){
       <label class="row" style="margin-top:10px;font-size:15px"><input type="checkbox" ${S.settings.auto!==false?'checked':''} onchange="S.settings.auto=this.checked;save()"> 자동 조절 (3일 연속 90점 이상이면 +5, 70점 미만이면 −5, 범위 15~40)</label>
       <h3 style="margin-top:14px">색</h3><div class="swatches">${THEMES.map(([k,n,c])=>`<button class="${(S.settings.theme||'mint')===k?'on':''}" onclick="S.settings.theme='${k}';applyTheme();save();Settings()"><i style="background:${c}"></i>${n}</button>`).join('')}</div>
       <h3 style="margin-top:14px">뜻 표시</h3><div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Settings()">한글만</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Settings()">한글 + 영영</button></div></div>
-    <div class="card"><h3>레벨</h3><p class="muted">${S.lo!=null?`${S.cefr} · 출발점 ${S.lo}번째 · 테스트 ${validN()}/${PLACE_MAX}회`:'아직 없음'}</p><button class="btn secondary" onclick="route='place';Place.phase='intro';render()">레벨 테스트 보기</button>
+    <div class="card"><h3>레벨</h3><p class="muted">레벨 테스트 ${validN()}/${PLACE_MAX}회${S.reportReleased?` · ${S.cefr} · <a href="#" onclick="route='report';render();return false">결과지 보기</a>`:''}</p><button class="btn secondary" onclick="route='place';Place.phase='intro';render()">레벨 테스트 보기</button>
       ${placeDone()?`<div style="height:8px"></div><button class="btn plain" onclick="if(confirm('레벨 테스트 기록을 지우고 처음부터 다시 봅니다. 진도는 유지됩니다.')){S.placements=[];S.lo=null;S.hi=null;S.grayDone=false;save();route='place';Place.phase='intro';render();}">기록 지우고 처음부터</button>`:''}</div>
     <div class="card"><h3>데이터</h3><button class="btn plain" onclick="Settings.exportJson()">내보내기 (JSON)</button><div style="height:8px"></div><button class="btn danger" onclick="Auth.signOut()">로그아웃</button></div>
     <div class="footer">달달 v${VERSION} · 제작 Educclesia Group<br>단어 데이터: NGSL·NAWL 1.2 (Browne, Culligan &amp; Phillips, CC BY-SA 4.0) · CEFR 등급: Oxford 3000/5000 (가정용)</div>`;
@@ -684,7 +749,8 @@ const Admin = {
     const users = await Store.list('users'); Admin.kids = [];
     for(const u of users.filter(u => u.role === 'student')){ const p = Object.assign(blankStudent(), await Store.get('progress', u.id) || {}); Admin.kids.push({...u, p}); }
     Admin.tests = (await Store.list('tests')).sort((a,b)=>b.at-a.at);
-    Admin.events = (await Store.list('events')).sort((a,b)=>b.at-a.at).slice(0,50);
+    const allEv = await Store.list('events'); Admin.released = new Set(allEv.filter(e=>e.kind==='release').map(e=>e.uid));
+    Admin.events = allEv.filter(e=>e.kind!=='release' && e.kind!=='report').sort((a,b)=>b.at-a.at).slice(0,50);
   },
   async render(){
     app.innerHTML = `<h1>관리</h1><p class="sub">${esc(USER.name)}</p><div class="seg" style="margin-bottom:14px"><button class="${Admin.tab==='kids'?'on':''}" onclick="Admin.tab='kids';Admin.render()">아이들</button><button class="${Admin.tab==='new'?'on':''}" onclick="Admin.tab='new';Admin.render()">시험 만들기</button><button class="${Admin.tab==='tests'?'on':''}" onclick="Admin.tab='tests';Admin.render()">결과</button></div><div id="adm"><p class="muted">불러오는 중…</p></div>`;
@@ -702,7 +768,17 @@ const Admin = {
         <div class="stat" style="margin:12px 0"><div><b>${p.cefr||'—'}</b><span>레벨</span></div><div><b>${p.streak||0}</b><span>연속일</span></div><div><b>${wrongN}</b><span>틀린 단어</span></div></div>
         <div class="week">${wk.map(d=>{ const x=p.days[d]; const w=dow(d); return `<div class="${d===t?'today':''} ${x&&x.test?'done':(d<t&&w!==0?'miss':'')}"><b>${DOWK[w]}</b>${w===0?'쉼':x&&x.test?x.test.score+'점':(d<t?'—':'')}</div>`;}).join('')}</div>
         <div class="cefr" style="margin-top:10px">${LEVELS.map(l=>`<div><b>${prof[l].n?Math.round(prof[l].k/prof[l].n*100):0}<span style="font-size:11px">%</span></b><span>${l}</span></div>`).join('')}</div>
+        ${p.report ? `<div class="row between" style="margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--tint)"><span>📄 결과지 ${Admin.released.has(k.id)||p.reportReleased ? '<span class="pill g">아이에게 공개됨</span>' : '<span class="pill a">확인 대기</span>'}</span><button class="btn xs" onclick="Admin.showReport('${k.id}')">보기</button></div>` : `<p class="tiny" style="margin:8px 0 0">레벨 테스트 ${(p.placements||[]).filter(x=>x.valid).length}/3</p>`}
         <p class="tiny" style="margin:8px 0 0">레벨 테스트 ${p.placements.length}회 · 출발점 ${p.lo!=null?p.lo:'—'} · 배운 단어 ${Object.values(p.days).reduce((a,d)=>a+(d.words||[]).length,0)}</p></div>`; }).join('');
+  },
+  showReport(uid){
+    const k = Admin.kids.find(x=>x.id===uid); if(!k || !k.p.report) return; const rel = Admin.released.has(uid) || k.p.reportReleased;
+    const m = document.createElement('div'); m.className = 'modal'; m.onclick = e => { if(e.target===m) m.remove(); };
+    m.innerHTML = `<div>${reportHtml(k.p.report, k.name)}<div style="height:14px"></div>
+      ${rel ? '<p class="small">이미 아이에게 공개했어요.</p>' : `<button class="btn" id="rel-btn">${esc(k.name)}에게 보내기</button>`}
+      <div style="height:8px"></div><button class="btn plain" onclick="this.closest('.modal').remove()">닫기</button></div>`;
+    document.body.appendChild(m);
+    const b = m.querySelector('#rel-btn'); if(b) b.onclick = async () => { await Store.set('events', Store.newId(), {uid, name:k.name, kind:'release', title:'결과지 공개', by:USER.name, at:Date.now()}); m.remove(); toast(k.name+'에게 보냈어요'); Admin.render(); };
   },
   newHtml(){
     return `<div class="card"><h3>시험 만들기</h3>
@@ -763,7 +839,7 @@ async function render(){
   if(USER.role==='student' && route==='admin') route='home';
   renderNav();
   if(USER.role==='student'){
-    if(route==='home') await Home(); else if(route==='place') Place.render(); else if(route==='gray') Gray.render(); else if(route==='study') Study.render(); else if(route==='test') Test.render(); else if(route==='words') Words(); else if(route==='settings') Settings();
+    if(route==='home') await Home(); else if(route==='place') Place.render(); else if(route==='gray') Gray.render(); else if(route==='study') Study.render(); else if(route==='test') Test.render(); else if(route==='words') Words(); else if(route==='settings') Settings(); else if(route==='report'){ app.innerHTML = `<div class="row between" style="margin-top:14px"><span></span><button class="btn xs plain" onclick="route='home';render()">닫기</button></div><div class="card">${S.report && S.reportReleased ? reportHtml(S.report, USER.name) : '<p class="muted">아직 결과지가 없어요.</p>'}</div>`; }
   } else {
     if(route==='admin') await Admin.render(); else if(route==='words'){ S = S || blankStudent(); Words(); } else if(route==='asettings') app.innerHTML = `<h1>설정</h1><p class="sub">${esc(USER.email)}</p><div class="card"><button class="btn danger" onclick="Auth.signOut()">로그아웃</button></div><div class="footer">달달 v${VERSION} · 제작 Educclesia Group</div>`;
   }
