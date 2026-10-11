@@ -200,7 +200,7 @@ const CEFR_DESC = [
   ['C1','고급','전문적인 글도 자연스럽게 읽고 씀','130~150'],
   ['C2','최상급','원어민에 가까운 수준 (이 앱 범위 밖)','155~160']];
 const PB_N = 20, PB_PER = 4, P_NAWL = 0, P_FAKE = 30;     // 배치 테스트: 20구간×4 + 가짜 30 = 110
-const GRAY_MIN = 250, GRAY_MAX = 900, FA_HARD = 0.40, FA_WARN = 0.25;
+const GRAY_MIN = 50, GRAY_MAX = 100, GRAY_CAP = 200, FA_HARD = 0.40, FA_WARN = 0.25;
 const PLACE_MAX = 3;
 const PLACE_GAP = 3*60*60*1000;   // 레벨 테스트 회차 사이 간격 (3시간)
 function validN(){ return S.placements.filter(p=>p.valid).length; }
@@ -408,19 +408,20 @@ function scorePlacement(items, answers){
   const fit = fitLogistic(pts, N);
   const half = Math.max(GRAY_MIN, Math.min(GRAY_MAX, Math.log(3)/fit.k));
   const lo = Math.max(0, Math.min(N-1, Math.round(fit.R - half)));
-  const hi = Math.min(N, Math.max(lo+150, Math.round(fit.R + half)));
+  const hi = Math.min(N, Math.max(lo+100, Math.round(fit.R + half)));
   return {R:Math.round(fit.R), k:fit.k, fa, lo, hi, bins:pts.map(q=>Math.round(q.p*100)), valid: fa < FA_HARD, at:Date.now()};
 }
 function finalizePlacement(){ // 유효한 회차들의 중앙값
   const ok = S.placements.filter(p => p.valid); if(!ok.length) return;
   const med = a => { const s = a.slice().sort((x,y)=>x-y); return s[Math.floor((s.length-1)/2)]; };
   const R = med(ok.map(p=>p.R)); const half = med(ok.map(p=>Math.round((p.hi-p.lo)/2)));
-  S.lo = Math.max(0, Math.round(R-half)); S.hi = Math.min(WORDS.length, Math.max(S.lo+150, Math.round(R+half)));
+  S.lo = Math.max(0, Math.round(R-half)); S.hi = Math.min(WORDS.length, Math.max(S.lo+100, Math.round(R+half))); capZone();
   S.cefr = lvOf(Math.min(WORDS.length-1, R));
   // 레벨이 바뀌면 회색 구역을 다시 확인해야 함
   S.grayDone = false; save();
 }
-function grayList(){ const out=[]; if(S.lo==null) return out; for(let i=S.lo;i<S.hi;i++){ const w=WORDS[i].w; if(S.diag[w]==null) out.push(i); } return out; }
+function capZone(){ if(S.lo==null || S.hi-S.lo <= GRAY_CAP) return false; const c = Math.round((S.lo+S.hi)/2); S.lo = Math.max(0, c-GRAY_CAP/2); S.hi = Math.min(WORDS.length, S.lo+GRAY_CAP); return true; }
+function grayList(){ const out=[]; if(S.lo==null) return out; if(capZone()) save(); for(let i=S.lo;i<S.hi;i++){ const w=WORDS[i].w; if(S.diag[w]==null) out.push(i); } return out; }
 
 const Place = {
   items:[], idx:0, ans:{}, phase:'intro', t0:0,
