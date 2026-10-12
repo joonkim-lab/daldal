@@ -1,5 +1,6 @@
 """달달 디스코드 알림 (GitHub Actions에서 30분마다 실행. 웹훅 주소는 GitHub Secret에만 있음)
-- 새 시험 결과 + 칭찬/격려 (messages.json '시험 후', '연속')
+- 오늘의 시험 끝남 알림 (점수는 안 올림) + 연속 기록 ('시험 완료', '연속')
+- 22:00~07:00에는 보내지 않음
 - 정해진 시각에 독촉 (messages.json '독촉')
 - 매일 21:30 오늘 현황 요약 (월~토)
 봇 계정(이메일/비밀번호)으로 로그인해 Firestore REST로 읽는다.
@@ -41,6 +42,10 @@ def fill(t, name, **kw):
     return t
 def pick(lst, name, **kw): return fill(random.choice(lst), name, **kw) if lst else None
 
+# 조용한 시간(22:00~07:00)에는 아무것도 보내지 않음. 밀린 알림은 아침 7시 이후에 나감
+if (now.hour >= 22 or now.hour < 7) and not os.environ.get('FORCE'):
+    print('조용한 시간 — 건너뜀'); raise SystemExit(0)
+
 auth = http(f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}',
             {'email': os.environ['BOT_EMAIL'], 'password': os.environ['BOT_PASSWORD'], 'returnSecureToken': True})
 tok, uid = auth['idToken'], auth['localId']
@@ -68,23 +73,19 @@ for r in http(f'{BASE}:runQuery', q, tok):
     kids.append({'id': sid, 'name': name, 'p': p, 'day': day, 'state': state})
 byid = {k['id']: k for k in kids}
 
-# 1. 새 시험 결과 + 칭찬/격려
+# 1. 오늘의 시험 끝남 알림 (점수·틀린 단어는 채널에 올리지 않음 — 관리자 화면에서만 봄)
 q = {'structuredQuery': {'from': [{'collectionId': 'events'}],
      'where': {'fieldFilter': {'field': {'fieldPath': 'at'}, 'op': 'GREATER_THAN', 'value': {'integerValue': str(last)}}},
      'orderBy': [{'field': {'fieldPath': 'at'}}]}}
 for r in http(f'{BASE}:runQuery', q, tok):
     if 'document' not in r: continue
-    e = doc(r['document']); name = e.get('name'); sc = e.get('score') or 0; w = e.get('wrong') or []
-    lines = [f'📘 **{name}** · {e.get("title")} · **{sc}점** ({e.get("c")}/{e.get("n")})' + (f'\n틀린 단어: {", ".join(w)}' if w else '')]
-    for rule in M.get('시험 후', []):
-        c = rule.get('조건', '')
-        ok = (c == '100점' and sc == 100) or (c == '90점 이상' and 90 <= sc < 100) or (c == '70점 미만' and sc < 70)
-        if ok: lines.append(pick(rule.get('문구'), name, 점수=sc, 틀린수=len(w))); break
+    e = doc(r['document']); name = e.get('name'); last = max(last, int(e.get('at') or 0))
+    if e.get('kind') != 'daily': continue          # 다시 풀기·결과지·지정 시험 등은 채널에 안 올림
+    lines = [pick(M.get('시험 완료') or ['✅ {멘션} 오늘 단어 시험 끝! 👏'], name)]
     k = byid.get(e.get('uid')); st = (k['p'].get('streak') if k else 0) or 0
-    if e.get('kind') == 'daily' and st in (M.get('연속', {}).get('날짜') or []):
+    if st in (M.get('연속', {}).get('날짜') or []):
         lines.append(pick(M['연속'].get('문구'), name, 연속=st))
     say('\n'.join(x for x in lines if x))
-    last = max(last, int(e.get('at') or 0))
 
 # 1-2. 레벨 테스트 다음 회차 열림 / 3회 완료 알림
 GAP = 3 * 60 * 60 * 1000; nowms = int(time.time() * 1000)
@@ -140,7 +141,7 @@ if MODE == 'daily' and (dow != 0 or os.environ.get('FORCE')):
         pl0 = (k['p'].get('placements') or [{}])[0].get('at') if k['p'].get('placements') else 0
         late = ' ⚠️ 시작한 지 이틀 넘음' if pl0 and int(time.time()*1000) - int(pl0) > 48*3600*1000 else ''
         detail = {'레벨 전': f'레벨 테스트 {nv}/3' + late, '외우기만': '외우기는 했는데 시험을 아직 안 봤어요', '안 함': '오늘 공부 안 함',
-                  '함': f'{t.get("score")}점 ({t.get("c")}/{t.get("n")}) · {k["p"].get("streak", 0)}일 연속'}[k['state']]
+                  '함': f'오늘 공부 끝 · {k["p"].get("streak", 0)}일 연속'}[k['state']]
         lines.append(f'{icon[k["state"]]} **{k["name"]}** — {detail}')
     say(f'📒 **달달 {today.month}/{today.day} ({"일월화수목금토"[dow]})**\n' + ('\n'.join(lines) or '아직 로그인한 아이가 없어요'))
 
