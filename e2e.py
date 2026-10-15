@@ -6,7 +6,7 @@ def ck(n,c,x=''):
     if not c: fails.append(n)
 U='http://localhost:8765/index.html'
 with sync_playwright() as pw:
-    b=pw.chromium.launch(args=['--no-sandbox']); ctx=b.new_context(viewport={'width':390,'height':800}); pg=ctx.new_page()
+    b=pw.chromium.launch(args=['--no-sandbox']); ctx=b.new_context(viewport={'width':390,'height':800}); ctx.route('**/firebasejs/**', lambda r: r.abort()); pg=ctx.new_page()
     errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
     pg.goto(U); pg.wait_for_timeout(1500)
     ck('로그인 화면', '달달' in pg.inner_text('#app'))
