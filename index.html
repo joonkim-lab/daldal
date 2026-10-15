@@ -122,7 +122,14 @@ nav.tab svg{width:26px;height:26px}
 .hidden{display:none!important}
 /* 학습 카드 */
 .wcard{background:var(--card);border-radius:24px;padding:40px 24px 28px;box-shadow:var(--sh);text-align:center;min-height:300px;display:flex;flex-direction:column;justify-content:center;position:relative}
-.spk{display:inline-block;margin-top:10px;padding:6px 12px;border:1px solid var(--line,#ddd);border-radius:999px;background:transparent;color:inherit;font-size:15px;cursor:pointer}.spk.xs{margin:0;padding:1px 7px;font-size:13px;vertical-align:middle}
+.spk{display:inline-block;align-self:center;margin-top:10px;padding:6px 12px;border:1px solid var(--line,#ddd);border-radius:999px;background:transparent;color:inherit;font-size:15px;cursor:pointer}.spk.xs{margin:0;padding:1px 7px;font-size:13px;vertical-align:middle}
+.morph{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line,#ddd);text-align:center}
+.morph .mp{display:inline-block;padding:2px 9px;border-radius:8px;background:var(--tint);font-size:16px;font-weight:600;letter-spacing:.01em}
+.morph .mp.root{background:var(--accent);color:#fff}
+.morph .plus{margin:0 5px;color:var(--ink3);font-size:14px}
+.morph .mg{margin-top:8px;font-size:14px;color:var(--ink2)}
+.morph .mf{margin-top:4px;font-size:12px;color:var(--ink3)}
+.morph.sm{margin-top:4px;padding:0;border:0;text-align:left}.morph.sm .mp{font-size:12px;padding:0 6px}.morph.sm .plus{margin:0 3px;font-size:11px}.morph.sm .mg{display:inline;margin-left:6px;font-size:12px}
 .wcard .word{font-size:40px;font-weight:700;letter-spacing:-.02em;word-break:break-word}
 .wcard .pos{font-size:13px;color:var(--ink3);margin-top:2px}
 .wcard .ko{font-size:24px;font-weight:600;margin-top:18px}
@@ -189,7 +196,7 @@ const CONFIG = {
   testPerDay: 30,
   reminderHour: 21,
 };
-const VERSION = '1.1';
+const VERSION = '1.2';
 const LEVELS = ['A1','A2','B1','B2','C1'];
 const DET = {A1:'55 이하', A2:'55 이하', B1:'60~95', B2:'100~125', C1:'130~150'};
 const DET_RANGE = {B1:[60,95], B2:[100,125], C1:[130,150]};
@@ -231,6 +238,9 @@ const $ = s => document.querySelector(s);
 const app = $('#app');
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function speak(w){ if(!('speechSynthesis' in window)) return toast('이 기기는 발음을 지원하지 않아요'); const u=new SpeechSynthesisUtterance(w); u.lang='en-US'; u.rate=0.9; const vs=speechSynthesis.getVoices(); const v=vs.find(x=>x.lang==='en-US'&&/Samantha|Google US/.test(x.name))||vs.find(x=>x.lang==='en-US'); if(v) u.voice=v; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+function morphHtml(w, full, sm){ const m = w && w.m; if(!m || !m.parts || !m.parts.length) return '';
+  const parts = m.parts.map(x => `<span class="mp ${x.startsWith('-')||x.endsWith('-')?'':'root'}">${esc(x)}</span>`).join('<span class="plus">+</span>');
+  return `<div class="morph${sm?' sm':''}">${parts}${full ? `<div class="mg">${esc(m.gloss||'')}</div>${m.fam&&m.fam.length ? `<div class="mf">같은 뿌리 · ${m.fam.map(esc).join(' · ')}</div>`:''}` : ''}</div>`; }
 function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1800); }
 function todayKey(d){ d = d || new Date(); const k = new Date(d.getTime() - d.getTimezoneOffset()*60000); return k.toISOString().slice(0,10); }
 function dayNum(k){ return Math.floor(new Date(k+'T00:00:00').getTime()/86400000); }
@@ -564,6 +574,7 @@ const Study = {
       <div class="wcard" onclick="Study.toggle()"><span class="lv pill b">${w.lv}</span><span class="idx">${Study.idx+1}</span>
         <div class="word">${esc(w.w)}</div><button type="button" class="spk" data-w="${esc(w.w)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊 발음</button><div class="pos">${esc(w.pos)}</div>
         ${Study.flip ? `<div class="ko">${esc(w.ko)}</div>${showEn ? `<div class="en">${esc(w.en)}</div>` : ''}` : `<div class="small" style="margin-top:22px">탭해서 뜻 보기</div>`}
+        ${morphHtml(w, Study.flip)}
       </div>
       ${Study.flip ? `<div class="pair"><button class="btn no" onclick="Study.grade(false)">다시</button><button class="btn yes" onclick="Study.grade(true)">외웠다</button></div>` : `<div style="margin-top:14px"><button class="btn" onclick="Study.toggle()">뜻 보기</button></div>`}
       <p class="tiny" style="text-align:center;margin-top:12px">스페이스: 뜻 보기 · ← 다시 · → 외웠다</p>`;
@@ -613,12 +624,12 @@ const Test = {
       <div class="row between" style="margin-top:14px"><span class="small">${esc(Test.meta.title)} · ${Test.idx+1} / ${Test.qs.length}</span>${Test.meta.kind!=='assigned' ? `<button class="btn xs plain" onclick="route='home';render()">그만두기</button>`:''}</div>
       <div class="bar" style="margin:10px 0 18px"><i style="width:${Test.idx/Test.qs.length*100}%"></i></div>
       ${q.t === 'mcq' ? `
-        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span>${q.rev?'<span class="idx pill a">복습</span>':''}<div class="word">${esc(w.w)}</div><button type="button" class="spk" data-w="${esc(w.w)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊 발음</button><div class="pos">${esc(w.pos)}</div></div>
+        <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span>${q.rev?'<span class="idx pill a">복습</span>':''}<div class="word">${esc(w.w)}</div><button type="button" class="spk" data-w="${esc(w.w)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊 발음</button><div class="pos">${esc(w.pos)}</div>${Test.submitted ? morphHtml(w, true) : ''}</div>
         <div class="choices">${q.choices.map((c,i)=>`<button ${Test.submitted?'disabled':''} class="${Test.submitted ? (c===q.a?'ok': (Test.picked===c?'bad':'')) : ''}" onclick="Test.pick(${i})">${esc(c)}</button>`).join('')}</div>`
       : `
         <div class="wcard" style="min-height:160px"><span class="lv pill b">${w.lv}</span>${q.rev?'<span class="idx pill a">복습</span>':''}<div class="ko" style="margin-top:0">${esc(w.ko)}</div>${S.settings.showEn ? `<div class="en">${esc(w.en)}</div>`:''}<div class="pos" style="margin-top:8px">${esc(w.pos)} · 영어 단어를 쓰세요</div></div>
         <div style="margin-top:14px"><input id="spell" class="field" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="spelling" ${Test.submitted?'disabled':''} value="${Test.submitted?esc(Test.picked):''}"></div>
-        ${Test.submitted ? `<div class="card tight" style="margin-top:10px"><span class="pill ${normSpell(Test.picked)===q.a?'g':'r'}">${normSpell(Test.picked)===q.a?'정답':'오답'}</span> &nbsp;<b>${esc(q.a)}</b> <button type="button" class="spk" data-w="${esc(q.a)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊</button></div>` : `<div style="margin-top:10px"><button class="btn" onclick="Test.submitSpell()">확인</button></div>`}`}
+        ${Test.submitted ? `<div class="card tight" style="margin-top:10px"><span class="pill ${normSpell(Test.picked)===q.a?'g':'r'}">${normSpell(Test.picked)===q.a?'정답':'오답'}</span> &nbsp;<b>${esc(q.a)}</b> <button type="button" class="spk" data-w="${esc(q.a)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊</button>${morphHtml(w, true)}</div>` : `<div style="margin-top:10px"><button class="btn" onclick="Test.submitSpell()">확인</button></div>`}`}
       ${Test.submitted ? `<div style="margin-top:12px"><button class="btn" onclick="Test.next()">다음</button></div>` : ''}`;
     if(q.t==='spell' && !Test.submitted){ const el=$('#spell'); el.focus(); el.addEventListener('keydown', e => { if(e.key==='Enter'){ e.stopPropagation(); Test.submitSpell(); } }); }
     document.onkeydown = null; if(Test.submitted) setTimeout(()=>{ document.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); document.onkeydown=null; Test.next(); } }; }, 150);
@@ -726,7 +737,7 @@ function Words(){
     <input class="field" placeholder="검색 (영어·한글)" value="${esc(Words.q||'')}" oninput="Words.q=this.value;Words()">
     <div class="row" style="margin:10px 0"><div class="seg">${LEVELS.map(l=>`<button class="${l===lv&&!qq?'on':''}" onclick="Words.lv='${l}';Words.q='';Words()">${l}</button>`).join('')}</div>
       <div class="seg"><button class="${!S.settings.showEn?'on':''}" onclick="S.settings.showEn=false;save();Words()">한글</button><button class="${S.settings.showEn?'on':''}" onclick="S.settings.showEn=true;save();Words()">+영영</button></div></div>
-    <div class="card tight"><div class="list">${list.map(w=>{ const st = S.diag[w.w]==='O' ? 'g' : learned.has(w.w) ? ((S.wrong[w.w]||0)>0?'r':'b') : (S.lo!=null && w.i<S.lo ? 'g' : ''); return `<div class="row between"><div><b>${esc(w.w)}</b> <button type="button" class="spk xs" data-w="${esc(w.w)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊</button> <span class="tiny">${esc(w.pos)}</span><div class="muted" style="font-size:15px">${esc(w.ko)}</div>${S.settings.showEn?`<div class="small">${esc(w.en)}</div>`:''}</div><div style="text-align:right;flex-shrink:0">${st?`<span class="pill ${st}">${st==='g'?'앎':st==='b'?'학습':'오답'}</span>`:''}${USER.role==='student'?`<br><div class="seg vx" style="margin-top:6px"><button class="${S.diag[w.w]==='O'?'on ok':''}" onclick="Words.mark('${w.w}','O')">✓</button><button class="${S.diag[w.w]==='X'?'on bad':''}" onclick="Words.mark('${w.w}','X')">✗</button></div>`:''}</div></div>`;}).join('')}</div>${list.length>=300?'<p class="small">300개까지만 표시</p>':''}</div>`;
+    <div class="card tight"><div class="list">${list.map(w=>{ const st = S.diag[w.w]==='O' ? 'g' : learned.has(w.w) ? ((S.wrong[w.w]||0)>0?'r':'b') : (S.lo!=null && w.i<S.lo ? 'g' : ''); return `<div class="row between"><div><b>${esc(w.w)}</b> <button type="button" class="spk xs" data-w="${esc(w.w)}" onclick="speak(this.dataset.w)" aria-label="발음">🔊</button> <span class="tiny">${esc(w.pos)}</span><div class="muted" style="font-size:15px">${esc(w.ko)}</div>${S.settings.showEn?`<div class="small">${esc(w.en)}</div>`:''}${morphHtml(w, true, true)}</div><div style="text-align:right;flex-shrink:0">${st?`<span class="pill ${st}">${st==='g'?'앎':st==='b'?'학습':'오답'}</span>`:''}${USER.role==='student'?`<br><div class="seg vx" style="margin-top:6px"><button class="${S.diag[w.w]==='O'?'on ok':''}" onclick="Words.mark('${w.w}','O')">✓</button><button class="${S.diag[w.w]==='X'?'on bad':''}" onclick="Words.mark('${w.w}','X')">✗</button></div>`:''}</div></div>`;}).join('')}</div>${list.length>=300?'<p class="small">300개까지만 표시</p>':''}</div>`;
 }
 Words.mark = (w,v) => { S.diag[w] = S.diag[w]===v ? undefined : v; if(S.diag[w]===undefined) delete S.diag[w]; save(); Words(); };
 
